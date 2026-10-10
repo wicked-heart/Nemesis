@@ -51,7 +51,7 @@ import type {
   Round2PlayerSummary,
 } from '@/lib/types';
 import { DEFAULT_SECRET_DIRECTIVE } from '@/lib/types';
-import { renderClassifiedContent } from './Round2TeamCard';
+import { renderClassifiedContent } from '@/lib/directiveRenderer';
 import DoomMask from './DoomMask';
 import ArcaneCanvas from './ArcaneCanvas';
 import { sounds } from '@/lib/sound';
