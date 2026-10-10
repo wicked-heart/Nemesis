@@ -19,11 +19,26 @@ import {
   ShieldCheck,
   Award,
   Download,
+  Users2,
+  UserPlus,
+  Trash2,
+  Link2,
+  CheckSquare,
+  Square,
+  Layers,
+  ArrowRight,
+  UserCheck,
+  Megaphone,
+  EyeOff,
 } from 'lucide-react';
 import {
   getAdminDashboard,
   getAdminParticipantDetails,
   resolvePenalty,
+  getRound2Teams,
+  createRound2Team,
+  disbandRound2Team,
+  revealBroadcastMessage,
 } from '@/lib/api';
 import type {
   AdminDashboardData,
@@ -31,7 +46,12 @@ import type {
   AdminParticipantDetail,
   RoundStatus,
   PlayerStatus,
+  Round2TeamsData,
+  Round2TeamItem,
+  Round2PlayerSummary,
 } from '@/lib/types';
+import { DEFAULT_SECRET_DIRECTIVE } from '@/lib/types';
+import { renderClassifiedContent } from './Round2TeamCard';
 import DoomMask from './DoomMask';
 import ArcaneCanvas from './ArcaneCanvas';
 import { sounds } from '@/lib/sound';
@@ -55,8 +75,20 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshCountdown, setRefreshCountdown] = useState(8);
-  const [activeTab, setActiveTab] = useState<'overview' | 'scoreboard'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'scoreboard' | 'teams'>('overview');
   const [scoreSearchQuery, setScoreSearchQuery] = useState('');
+
+  // Round 2 Team Formation States
+  const [teamsData, setTeamsData] = useState<Round2TeamsData | null>(null);
+  const [teamsLoading, setTeamsLoading] = useState(false);
+  const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
+  const [customTeamName, setCustomTeamName] = useState('');
+  const [creatingTeam, setCreatingTeam] = useState(false);
+  const [disbandingId, setDisbandingId] = useState<string | null>(null);
+  const [unassignedSearchQuery, setUnassignedSearchQuery] = useState('');
+  const [teamsSearchQuery, setTeamsSearchQuery] = useState('');
+  const [teamFeedback, setTeamFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [broadcasting, setBroadcasting] = useState(false);
 
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -76,9 +108,35 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
     }
   }, [password]);
 
+  const loadTeamsData = useCallback(async () => {
+    setTeamsLoading(true);
+    try {
+      const res = await getRound2Teams(password);
+      if (res.error) {
+        setTeamFeedback({ type: 'error', message: res.error });
+      } else {
+        setTeamsData(res);
+      }
+    } catch (err) {
+      setTeamFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to fetch Round 2 teams data',
+      });
+    } finally {
+      setTeamsLoading(false);
+    }
+  }, [password]);
+
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
+
+  // Load Round 2 teams whenever switching to the teams tab
+  useEffect(() => {
+    if (activeTab === 'teams') {
+      loadTeamsData();
+    }
+  }, [activeTab, loadTeamsData]);
 
   // Auto-refresh timer (every 8 seconds)
   useEffect(() => {
@@ -92,6 +150,9 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
       setRefreshCountdown((prev) => {
         if (prev <= 1) {
           loadDashboard();
+          if (activeTab === 'teams') {
+            loadTeamsData();
+          }
           return 8;
         }
         return prev - 1;
@@ -101,7 +162,122 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
     return () => {
       if (countdownRef.current) clearInterval(countdownRef.current);
     };
-  }, [autoRefresh, loadDashboard]);
+  }, [autoRefresh, loadDashboard, activeTab, loadTeamsData]);
+
+  // Round 2 Handlers
+  const handleTogglePlayerSelection = (playerId: string) => {
+    sounds.playClick();
+    setTeamFeedback(null);
+    setSelectedPlayerIds((prev) => {
+      if (prev.includes(playerId)) {
+        return prev.filter((id) => id !== playerId);
+      }
+      if (prev.length >= 2) {
+        // If 2 already picked, replace the second one
+        return [prev[0], playerId];
+      }
+      return [...prev, playerId];
+    });
+  };
+
+  const handleCreateTeam = async () => {
+    if (selectedPlayerIds.length !== 2) {
+      setTeamFeedback({ type: 'error', message: 'Select exactly 2 operatives to form a pair.' });
+      return;
+    }
+    sounds.playClick();
+    setCreatingTeam(true);
+    setTeamFeedback(null);
+    try {
+      const res = await createRound2Team(
+        password,
+        selectedPlayerIds[0],
+        selectedPlayerIds[1],
+        customTeamName
+      );
+      if (res.error) {
+        setTeamFeedback({ type: 'error', message: res.error });
+      } else {
+        setTeamFeedback({
+          type: 'success',
+          message: `Team "${res.team_name || 'Team #' + res.team_number}" successfully established!`,
+        });
+        setSelectedPlayerIds([]);
+        setCustomTeamName('');
+        await loadTeamsData();
+      }
+    } catch (err) {
+      setTeamFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to create team',
+      });
+    } finally {
+      setCreatingTeam(false);
+    }
+  };
+
+  const handleDisbandTeam = async (teamId: string, teamName: string) => {
+    if (!window.confirm(`Disband "${teamName}"? Both operatives will return to the unassigned pool.`)) {
+      return;
+    }
+    sounds.playClick();
+    setDisbandingId(teamId);
+    setTeamFeedback(null);
+    try {
+      const res = await disbandRound2Team(password, teamId);
+      if (res.error) {
+        setTeamFeedback({ type: 'error', message: res.error });
+      } else {
+        setTeamFeedback({
+          type: 'success',
+          message: `Team "${teamName}" disbanded. Operatives returned to unassigned pool.`,
+        });
+        await loadTeamsData();
+      }
+    } catch (err) {
+      setTeamFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to disband team',
+      });
+    } finally {
+      setDisbandingId(null);
+    }
+  };
+
+  const handleToggleBroadcast = async () => {
+    sounds.playClick();
+    setBroadcasting(true);
+    setTeamFeedback(null);
+    const willReveal = !teamsData?.broadcast_revealed;
+
+    // Optimistically toggle so button flips immediately
+    setTeamsData((prev) => (prev ? { ...prev, broadcast_revealed: willReveal } : prev));
+
+    try {
+      const res = await revealBroadcastMessage(password, willReveal);
+      if (res.error) {
+        setTeamsData((prev) => (prev ? { ...prev, broadcast_revealed: !willReveal } : prev));
+        setTeamFeedback({ type: 'error', message: res.error });
+      } else {
+        sounds.playSuccess();
+        setTeamFeedback({
+          type: 'success',
+          message: willReveal
+            ? 'Broadcast message revealed to all players!'
+            : 'Broadcast message hidden from players.',
+        });
+        await loadTeamsData();
+      }
+    } catch (err) {
+      setTeamsData((prev) => (prev ? { ...prev, broadcast_revealed: !willReveal } : prev));
+      setTeamFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to update broadcast status',
+      });
+    } finally {
+      setBroadcasting(false);
+    }
+  };
 
   const handleOpenDetail = async (sessionId: string) => {
     sounds.playClick();
@@ -353,6 +529,21 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
           >
             <Trophy size={14} className="text-[#f59e0b]" />
             <span>SCORE SECTION (NAME, RRN &amp; SCORES) ({scoreboardList.length})</span>
+          </button>
+
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setActiveTab('teams');
+            }}
+            className={`px-4 py-2 rounded flex items-center gap-2 font-bold tracking-wider transition-all ${
+              activeTab === 'teams'
+                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
+                : 'text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-800 bg-black/30'
+            }`}
+          >
+            <Users2 size={14} className="text-cyan-400" />
+            <span>ROUND 2 TEAMS (PAIRS OF 2) {teamsData ? `(${teamsData.teams.length})` : ''}</span>
           </button>
         </div>
 
@@ -691,6 +882,625 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* VIEW 3: Round 2 Manual Team Formation (Pairs of 2) */}
+        {activeTab === 'teams' && (
+          <div className="space-y-6 animate-fade-in font-mono">
+            {/* Feedback Alert Banner */}
+            {teamFeedback && (
+              <div
+                className={`p-3.5 rounded border flex items-center justify-between text-xs transition-all ${
+                  teamFeedback.type === 'success'
+                    ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                    : 'bg-red-950/40 border-red-500/50 text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.15)]'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {teamFeedback.type === 'success' ? (
+                    <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                  ) : (
+                    <AlertTriangle size={16} className="text-red-400 shrink-0" />
+                  )}
+                  <span>{teamFeedback.message}</span>
+                </div>
+                <button
+                  onClick={() => setTeamFeedback(null)}
+                  className="text-gray-400 hover:text-white p-1"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
+            {/* Round 2 Team Stats KPI Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="doom-feature-card p-4 rounded text-left border-cyan-500/30">
+                <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
+                  <span>TOTAL REGISTERED</span>
+                  <Users size={14} className="text-cyan-400" />
+                </div>
+                <div className="text-2xl font-bold text-gray-100">
+                  {teamsData?.stats.total_players ?? (loading ? '...' : 0)}
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1">Total in tournament</div>
+              </div>
+
+              <div className="doom-feature-card p-4 rounded text-left border-emerald-500/30">
+                <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
+                  <span>FORMED TEAMS</span>
+                  <Users2 size={14} className="text-emerald-400" />
+                </div>
+                <div className="text-2xl font-bold text-emerald-400">
+                  {teamsData?.stats.formed_teams_count ?? 0}
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1">Pairs of 2 established</div>
+              </div>
+
+              <div className="doom-feature-card p-4 rounded text-left border-blue-500/30">
+                <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
+                  <span>ASSIGNED OPERATIVES</span>
+                  <UserCheck size={14} className="text-blue-400" />
+                </div>
+                <div className="text-2xl font-bold text-blue-400">
+                  {teamsData?.stats.assigned_players_count ?? 0}
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1">Currently in a team</div>
+              </div>
+
+              <div className="doom-feature-card p-4 rounded text-left border-amber-500/40">
+                <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
+                  <span>UNASSIGNED POOL</span>
+                  <UserPlus size={14} className="text-amber-400" />
+                </div>
+                <div className="text-2xl font-bold text-amber-400">
+                  {teamsData?.stats.unassigned_players_count ?? 0}
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1">Awaiting pair pairing</div>
+              </div>
+            </div>
+
+            {/* Main Interactive Grid: Formation Terminal (Left) & Formed Teams Roster (Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* LEFT COLUMN: Pairing Dock & Operatives Selection */}
+              <div className="lg:col-span-6 space-y-4">
+                {/* 1. Interactive Pairing Dock */}
+                <div className="terminal-panel p-5 border-2 border-cyan-500/40 rounded-lg shadow-[0_0_30px_rgba(6,182,212,0.1)] relative overflow-hidden">
+                  <div className="absolute top-0 right-0 bg-cyan-500/20 text-cyan-300 text-[10px] px-2.5 py-0.5 rounded-bl font-bold border-b border-l border-cyan-500/30">
+                    MANUAL PAIRING TERMINAL
+                  </div>
+
+                  <div className="flex items-center gap-2 mb-3">
+                    <UserPlus size={16} className="text-cyan-400" />
+                    <h3 className="font-regal text-base text-gray-100 font-bold tracking-wider">
+                      FORM A TEAM OF 2
+                    </h3>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mb-4 leading-relaxed">
+                    Select 2 unassigned operatives from the pool below to establish a syndicate team.
+                  </p>
+
+                  {/* 2 Operative Slots */}
+                  {(() => {
+                    const unassignedList = teamsData?.unassigned_players || [];
+                    const p1 = unassignedList.find((p) => p.id === selectedPlayerIds[0]);
+                    const p2 = unassignedList.find((p) => p.id === selectedPlayerIds[1]);
+                    const combinedScore = (p1?.round1_score || 0) + (p2?.round1_score || 0);
+
+                    return (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-11 items-center gap-2">
+                          {/* Slot 1 */}
+                          <div
+                            className={`sm:col-span-5 p-3 rounded border transition-all ${
+                              p1
+                                ? 'bg-cyan-950/40 border-cyan-500/60 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                                : 'bg-black/40 border-dashed border-gray-700 text-gray-500'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between text-[10px] text-gray-400 mb-1">
+                              <span className="font-bold text-cyan-400">OPERATIVE #1</span>
+                              {p1 && (
+                                <button
+                                  onClick={() => handleTogglePlayerSelection(p1.id)}
+                                  className="text-gray-400 hover:text-red-400 p-0.5"
+                                  title="Remove selection"
+                                >
+                                  <X size={12} />
+                                </button>
+                              )}
+                            </div>
+                            {p1 ? (
+                              <div>
+                                <div className="font-bold text-sm text-gray-100 truncate">
+                                  {p1.name}
+                                </div>
+                                <div className="flex items-center justify-between text-[10px] mt-1">
+                                  <span className="text-[#10b981] font-mono">{p1.participant_id}</span>
+                                  <span className="text-amber-400 font-bold">R1: {p1.round1_score} pts</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-[11px] italic py-2 text-center text-gray-600">
+                                Click an operative below to select
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Link Connector */}
+                          <div className="sm:col-span-1 flex justify-center py-1">
+                            <div
+                              className={`p-1.5 rounded-full border transition-all ${
+                                p1 && p2
+                                  ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 animate-pulse'
+                                  : 'bg-black/40 border-gray-800 text-gray-600'
+                              }`}
+                            >
+                              <Link2 size={14} />
+                            </div>
+                          </div>
+
+                          {/* Slot 2 */}
+                          <div
+                            className={`sm:col-span-5 p-3 rounded border transition-all ${
+                              p2
+                                ? 'bg-cyan-950/40 border-cyan-500/60 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                                : 'bg-black/40 border-dashed border-gray-700 text-gray-500'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between text-[10px] text-gray-400 mb-1">
+                              <span className="font-bold text-cyan-400">OPERATIVE #2</span>
+                              {p2 && (
+                                <button
+                                  onClick={() => handleTogglePlayerSelection(p2.id)}
+                                  className="text-gray-400 hover:text-red-400 p-0.5"
+                                  title="Remove selection"
+                                >
+                                  <X size={12} />
+                                </button>
+                              )}
+                            </div>
+                            {p2 ? (
+                              <div>
+                                <div className="font-bold text-sm text-gray-100 truncate">
+                                  {p2.name}
+                                </div>
+                                <div className="flex items-center justify-between text-[10px] mt-1">
+                                  <span className="text-[#10b981] font-mono">{p2.participant_id}</span>
+                                  <span className="text-amber-400 font-bold">R1: {p2.round1_score} pts</span>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-[11px] italic py-2 text-center text-gray-600">
+                                Click an operative below to select
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Optional Custom Team Name & Action */}
+                        <div className="pt-2 border-t border-gray-800/80 space-y-3">
+                          <div>
+                            <label className="block text-[11px] text-gray-400 mb-1">
+                              TEAM NAME <span className="text-gray-600">(OPTIONAL)</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={customTeamName}
+                              onChange={(e) => setCustomTeamName(e.target.value)}
+                              placeholder={`Default: Team #${String((teamsData?.teams.length || 0) + 1).padStart(2, '0')}`}
+                              maxLength={50}
+                              className="cyber-input text-xs py-1.5 w-full"
+                              disabled={creatingTeam}
+                            />
+                          </div>
+
+                          {/* Stats Preview & Create Button */}
+                          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                            <div className="text-[11px] text-gray-400">
+                              {p1 && p2 ? (
+                                <span className="text-cyan-300">
+                                  Combined Round 1 Score: <strong className="text-amber-400 font-bold">{combinedScore} PTS</strong>
+                                </span>
+                              ) : (
+                                <span>{selectedPlayerIds.length}/2 operatives picked</span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                              {selectedPlayerIds.length > 0 && (
+                                <button
+                                  onClick={() => setSelectedPlayerIds([])}
+                                  className="text-gray-500 hover:text-gray-300 text-xs px-2 py-1.5"
+                                  disabled={creatingTeam}
+                                >
+                                  Clear
+                                </button>
+                              )}
+                              <button
+                                onClick={handleCreateTeam}
+                                disabled={selectedPlayerIds.length !== 2 || creatingTeam}
+                                className={`flex-1 sm:flex-initial cyber-btn text-xs px-4 py-2 flex items-center justify-center gap-2 ${
+                                  selectedPlayerIds.length === 2 && !creatingTeam
+                                    ? 'cyber-btn-cyan shadow-[0_0_20px_rgba(6,182,212,0.3)]'
+                                    : 'opacity-50 cursor-not-allowed bg-gray-900 border-gray-800 text-gray-500'
+                                }`}
+                              >
+                                {creatingTeam ? (
+                                  <>
+                                    <Loader2 size={13} className="animate-spin text-cyan-400" />
+                                    <span>CREATING TEAM...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles size={13} className="text-cyan-400" />
+                                    <span>ESTABLISH TEAM PAIR</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* 2. Unassigned Operatives Pool List */}
+                <div className="terminal-panel border border-gray-800 rounded-lg overflow-hidden">
+                  <div className="p-3 bg-[#020704]/90 border-b border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <UserPlus size={14} className="text-amber-400" />
+                      <span className="font-bold text-xs text-gray-200">
+                        AVAILABLE UNASSIGNED OPERATIVES ({teamsData?.unassigned_players.length ?? 0})
+                      </span>
+                    </div>
+
+                    {/* Search unassigned */}
+                    <div className="relative w-full sm:w-48">
+                      <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                      <input
+                        type="text"
+                        value={unassignedSearchQuery}
+                        onChange={(e) => setUnassignedSearchQuery(e.target.value)}
+                        placeholder="Search pool..."
+                        className="cyber-input pl-7 text-[11px] py-1 w-full"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-2 max-h-[460px] overflow-y-auto space-y-1.5 divide-y divide-gray-900/40">
+                    {teamsLoading && !teamsData ? (
+                      <div className="py-12 text-center text-gray-500">
+                        <Loader2 size={20} className="animate-spin text-cyan-400 mx-auto mb-2" />
+                        <span>Loading operatives pool...</span>
+                      </div>
+                    ) : (() => {
+                      const unassignedList = teamsData?.unassigned_players || [];
+                      const filtered = unassignedList.filter((p) => {
+                        if (!unassignedSearchQuery) return true;
+                        const q = unassignedSearchQuery.toLowerCase();
+                        return (
+                          p.name.toLowerCase().includes(q) ||
+                          p.participant_id.toLowerCase().includes(q)
+                        );
+                      });
+
+                      if (unassignedList.length === 0) {
+                        return (
+                          <div className="py-12 text-center text-gray-500 text-xs">
+                            <CheckCircle2 size={28} className="text-emerald-400 mx-auto mb-2 opacity-80" />
+                            <p className="text-gray-300 font-bold mb-1">ALL OPERATIVES ARE PAIRED!</p>
+                            <p className="text-gray-500 text-[11px]">
+                              There are currently no unassigned operatives remaining.
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      if (filtered.length === 0) {
+                        return (
+                          <div className="py-8 text-center text-gray-500 text-xs">
+                            No operatives matched "{unassignedSearchQuery}".
+                          </div>
+                        );
+                      }
+
+                      return filtered.map((player) => {
+                        const isSelected = selectedPlayerIds.includes(player.id);
+                        return (
+                          <div
+                            key={player.id}
+                            onClick={() => handleTogglePlayerSelection(player.id)}
+                            className={`p-2.5 rounded border cursor-pointer transition-all flex items-center justify-between text-xs ${
+                              isSelected
+                                ? 'bg-cyan-950/40 border-cyan-500/70 shadow-[0_0_12px_rgba(6,182,212,0.15)] text-gray-100'
+                                : 'bg-black/30 border-gray-800/80 hover:border-gray-700 hover:bg-black/50 text-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="text-cyan-400">
+                                {isSelected ? (
+                                  <CheckSquare size={16} className="text-cyan-400" />
+                                ) : (
+                                  <Square size={16} className="text-gray-600" />
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-bold text-gray-200 tracking-wide">
+                                  {player.name}
+                                </div>
+                                <div className="text-[11px] text-gray-500 font-mono">
+                                  RRN: <span className="text-[#10b981]">{player.participant_id}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                <span className="text-[10px] text-gray-500 block uppercase">Round 1</span>
+                                <span className="font-bold text-amber-400 text-xs">
+                                  {player.round1_score} PTS
+                                </span>
+                              </div>
+                              <span
+                                className={`text-[10px] px-2 py-0.5 rounded border uppercase font-bold ${
+                                  isSelected
+                                    ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300'
+                                    : 'bg-black/40 border-gray-800 text-gray-500'
+                                }`}
+                              >
+                                {isSelected ? 'SELECTED' : 'SELECT'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT COLUMN: Formed Teams Roster */}
+              <div className="lg:col-span-6 space-y-4">
+                <div className="terminal-panel border border-gray-800 rounded-lg overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.6)]">
+                  {/* Formed Teams Header */}
+                  <div className="p-3.5 bg-[#020704]/90 border-b border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Users2 size={16} className="text-emerald-400" />
+                      <div>
+                        <span className="font-bold text-xs text-gray-200 block">
+                          FORMED ROUND 2 TEAMS ({teamsData?.teams.length ?? 0})
+                        </span>
+                        <span className="text-[10px] text-gray-500">
+                          Syndicates paired &amp; ready for Round 2
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      {/* Search formed teams */}
+                      <div className="relative flex-1 sm:w-44">
+                        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                        <input
+                          type="text"
+                          value={teamsSearchQuery}
+                          onChange={(e) => setTeamsSearchQuery(e.target.value)}
+                          placeholder="Search teams..."
+                          className="cyber-input pl-7 text-[11px] py-1 w-full"
+                        />
+                      </div>
+
+                      <button
+                        onClick={loadTeamsData}
+                        className="cyber-btn cyber-btn-cyan text-[11px] px-2.5 py-1 flex items-center gap-1 shrink-0"
+                        title="Reload teams"
+                      >
+                        <RefreshCw size={11} className={teamsLoading ? 'animate-spin' : ''} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Formed Teams List */}
+                  <div className="p-3 max-h-[680px] overflow-y-auto space-y-3">
+                    {teamsLoading && !teamsData ? (
+                      <div className="py-16 text-center text-gray-500">
+                        <Loader2 size={24} className="animate-spin text-emerald-400 mx-auto mb-2" />
+                        <span>Loading team registry...</span>
+                      </div>
+                    ) : (() => {
+                      const teamsList = teamsData?.teams || [];
+                      const filteredTeams = teamsList.filter((team) => {
+                        if (!teamsSearchQuery) return true;
+                        const q = teamsSearchQuery.toLowerCase();
+                        return (
+                          team.team_name.toLowerCase().includes(q) ||
+                          String(team.team_number).includes(q) ||
+                          team.player1.name.toLowerCase().includes(q) ||
+                          team.player1.participant_id.toLowerCase().includes(q) ||
+                          team.player2.name.toLowerCase().includes(q) ||
+                          team.player2.participant_id.toLowerCase().includes(q)
+                        );
+                      });
+
+                      if (teamsList.length === 0) {
+                        return (
+                          <div className="py-16 text-center text-gray-500 text-xs">
+                            <Layers size={32} className="text-gray-600 mx-auto mb-3 opacity-60" />
+                            <p className="text-gray-300 font-bold mb-1">NO TEAMS ESTABLISHED YET</p>
+                            <p className="text-gray-500 text-[11px] max-w-sm mx-auto">
+                              Select 2 operatives from the pairing terminal on the left to form your first Round 2 team.
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      if (filteredTeams.length === 0) {
+                        return (
+                          <div className="py-10 text-center text-gray-500 text-xs">
+                            No formed teams matched "{teamsSearchQuery}".
+                          </div>
+                        );
+                      }
+
+                      return filteredTeams.map((team) => {
+                        const isDisbanding = disbandingId === team.id;
+                        return (
+                          <div
+                            key={team.id}
+                            className="p-3.5 rounded-lg border border-gray-800 bg-black/40 hover:border-gray-700 transition-all space-y-2.5"
+                          >
+                            {/* Card Top: Number, Name, Combined Score, Disband Action */}
+                            <div className="flex items-center justify-between pb-2 border-b border-gray-800/80">
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-[11px] font-bold">
+                                  #{String(team.team_number).padStart(2, '0')}
+                                </span>
+                                <h4 className="font-bold text-sm text-gray-100 tracking-wide">
+                                  {team.team_name}
+                                </h4>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold text-[11px]">
+                                  Combined: {team.combined_round1_score} PTS
+                                </span>
+
+                                <button
+                                  onClick={() => handleDisbandTeam(team.id, team.team_name)}
+                                  disabled={isDisbanding}
+                                  className="text-gray-500 hover:text-red-400 p-1.5 rounded hover:bg-red-950/30 border border-transparent hover:border-red-900/50 transition-colors"
+                                  title="Disband team and return players to pool"
+                                >
+                                  {isDisbanding ? (
+                                    <Loader2 size={13} className="animate-spin text-red-400" />
+                                  ) : (
+                                    <Trash2 size={13} />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Card Body: The 2 Paired Players */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                              {/* Member 1 */}
+                              <div className="p-2 rounded bg-black/60 border border-gray-800/80 flex items-center justify-between">
+                                <div className="truncate pr-2">
+                                  <span className="text-[10px] text-gray-500 block uppercase">Member 1</span>
+                                  <span className="font-bold text-gray-200 truncate block">
+                                    {team.player1.name}
+                                  </span>
+                                  <span className="text-[10px] text-[#10b981] font-mono">
+                                    {team.player1.participant_id}
+                                  </span>
+                                </div>
+                                <span className="text-amber-400 font-bold text-xs shrink-0">
+                                  {team.player1.round1_score} pts
+                                </span>
+                              </div>
+
+                              {/* Member 2 */}
+                              <div className="p-2 rounded bg-black/60 border border-gray-800/80 flex items-center justify-between">
+                                <div className="truncate pr-2">
+                                  <span className="text-[10px] text-gray-500 block uppercase">Member 2</span>
+                                  <span className="font-bold text-gray-200 truncate block">
+                                    {team.player2.name}
+                                  </span>
+                                  <span className="text-[10px] text-[#10b981] font-mono">
+                                    {team.player2.participant_id}
+                                  </span>
+                                </div>
+                                <span className="text-amber-400 font-bold text-xs shrink-0">
+                                  {team.player2.round1_score} pts
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Card Footer: Timestamp */}
+                            <div className="flex items-center justify-between text-[10px] text-gray-500 pt-1">
+                              <span>Formed: {new Date(team.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                                <CheckCircle2 size={10} /> Ready for Round 2
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Directive Broadcast Control Panel */}
+            <div className="terminal-panel p-5 border-2 border-[#f59e0b]/50 rounded-lg shadow-[0_0_30px_rgba(245,158,11,0.15)] bg-black/70 relative overflow-hidden">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="space-y-2 max-w-3xl">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Megaphone size={16} className="text-[#f59e0b]" />
+                    <span className="font-regal text-sm font-bold text-gray-100 tracking-wider">
+                      BROADCAST DECREE // DOOM CHEATER BOUNTY DIRECTIVE
+                    </span>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded font-bold border uppercase tracking-wider ${
+                        teamsData?.broadcast_revealed
+                          ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 animate-pulse'
+                          : 'bg-gray-800 border-gray-700 text-gray-400'
+                      }`}
+                    >
+                      {teamsData?.broadcast_revealed ? 'LIVE ON ALL PLAYER SCREENS' : 'CURRENTLY HIDDEN'}
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded bg-black/90 border border-amber-500/30 text-xs font-mono leading-relaxed max-h-72 overflow-y-auto">
+                    <span className="text-gray-500 block text-[10px] uppercase font-bold mb-2 pb-1 border-b border-gray-800 flex items-center justify-between">
+                      <span>CLASSIFIED DIRECTIVE PAYLOAD</span>
+                      <span className="text-amber-400">TARGET: PAID AI PLANS (+8 PTS)</span>
+                    </span>
+                    {renderClassifiedContent(
+                      !teamsData?.broadcast_message ||
+                      teamsData.broadcast_message.includes('help doom catch cheaters') ||
+                      !teamsData.broadcast_message.includes('OPERATION DOOM')
+                        ? DEFAULT_SECRET_DIRECTIVE
+                        : teamsData.broadcast_message
+                    )}
+                  </div>
+                  <p className="text-[11px] text-gray-400">
+                    Clicking <strong>Reveal Message</strong> immediately broadcasts this classified directive below the team details across all active player screens.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
+                  <button
+                    onClick={handleToggleBroadcast}
+                    disabled={broadcasting}
+                    className={`w-full md:w-auto cyber-btn text-xs px-6 py-3 flex items-center justify-center gap-2 font-bold tracking-wider ${
+                      teamsData?.broadcast_revealed
+                        ? 'bg-amber-950/60 border-amber-500/60 text-amber-300 hover:bg-red-950/40 hover:border-red-500/60 hover:text-red-300'
+                        : 'cyber-btn-cyan shadow-[0_0_20px_rgba(6,182,212,0.3)]'
+                    }`}
+                  >
+                    {broadcasting ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin text-[#f59e0b]" />
+                        <span>TRANSMITTING DIRECTIVE...</span>
+                      </>
+                    ) : teamsData?.broadcast_revealed ? (
+                      <>
+                        <EyeOff size={14} />
+                        <span>HIDE MESSAGE</span>
+                      </>
+                    ) : (
+                      <>
+                        <Megaphone size={14} className="text-cyan-400" />
+                        <span>REVEAL MESSAGE</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -9,7 +9,14 @@ import type {
   AdminDashboardData,
   AdminParticipantDetail,
   ResolvePenaltyResult,
+  Round2TeamsData,
+  CreateTeamResult,
+  DisbandTeamResult,
+  PlayerTeamInfo,
+  Round2BroadcastMessage,
+  RevealBroadcastResult,
 } from './types';
+import { DEFAULT_SECRET_DIRECTIVE } from './types';
 
 const STORAGE_KEY = 'nemesis_session_token';
 
@@ -40,6 +47,13 @@ export async function registerOrResumeParticipant(name: string, participantId: s
   return result;
 }
 
+function normalizeBroadcastMessage(msg?: string | null): string {
+  if (!msg || msg.includes('help doom catch cheaters') || !msg.includes('OPERATION DOOM')) {
+    return DEFAULT_SECRET_DIRECTIVE;
+  }
+  return msg.replace(/8 points for every confirmed target/gi, '8 points from every confirmed target');
+}
+
 export async function getGameState(): Promise<GameSessionState | null> {
   const token = getSessionToken();
   if (!token) return null;
@@ -49,7 +63,57 @@ export async function getGameState(): Promise<GameSessionState | null> {
   });
   if (error) throw new Error(error.message);
   if (!data || (data as { error?: string }).error) return null;
-  return data as GameSessionState;
+  const state = data as GameSessionState;
+
+  try {
+    const broadcast = await getBroadcastMessage();
+    if (broadcast) {
+      if (!state.team) {
+        state.team = {
+          is_assigned: false,
+          broadcast_revealed: broadcast.is_revealed,
+          broadcast_message: broadcast.message,
+        };
+      } else {
+        state.team.broadcast_revealed = broadcast.is_revealed;
+        state.team.broadcast_message = broadcast.message;
+      }
+    }
+  } catch {
+    // Ignore sync error
+  }
+
+  if (state.team?.broadcast_message !== undefined) {
+    state.team.broadcast_message = normalizeBroadcastMessage(state.team.broadcast_message);
+  }
+  return state;
+}
+
+export async function getPlayerTeamInfo(): Promise<PlayerTeamInfo | null> {
+  const token = getSessionToken();
+  if (!token) return null;
+
+  const { data, error } = await supabase.rpc('get_player_team_info', {
+    p_session_token: token,
+  });
+  if (error) throw new Error(error.message);
+  if (!data || (data as { error?: string }).error) return null;
+  const team = data as PlayerTeamInfo;
+
+  try {
+    const broadcast = await getBroadcastMessage();
+    if (broadcast) {
+      team.broadcast_revealed = broadcast.is_revealed;
+      team.broadcast_message = broadcast.message;
+    }
+  } catch {
+    // Ignore sync error
+  }
+
+  if (team.broadcast_message !== undefined) {
+    team.broadcast_message = normalizeBroadcastMessage(team.broadcast_message);
+  }
+  return team;
 }
 
 export async function beginRound(): Promise<BeginRoundResult> {
@@ -131,4 +195,80 @@ export async function resolvePenalty(password: string, sessionId: string): Promi
   const res = data as ResolvePenaltyResult;
   if (res.error) throw new Error(res.error);
   return res;
+}
+
+// ===== Round 2 Team Formation API =====
+
+export async function getRound2Teams(password: string): Promise<Round2TeamsData> {
+  const { data, error } = await supabase.rpc('get_round2_teams_data', {
+    admin_pwd: password,
+  });
+  if (error) throw new Error(error.message);
+  const teamsData = data as Round2TeamsData;
+
+  try {
+    const broadcast = await getBroadcastMessage();
+    if (broadcast) {
+      teamsData.broadcast_revealed = broadcast.is_revealed;
+      teamsData.broadcast_message = broadcast.message;
+    }
+  } catch (bErr) {
+    console.error('Error fetching broadcast in getRound2Teams:', bErr);
+  }
+
+  if (teamsData?.broadcast_message !== undefined) {
+    teamsData.broadcast_message = normalizeBroadcastMessage(teamsData.broadcast_message);
+  }
+  return teamsData;
+}
+
+export async function createRound2Team(
+  password: string,
+  player1Id: string,
+  player2Id: string,
+  teamName?: string
+): Promise<CreateTeamResult> {
+  const { data, error } = await supabase.rpc('create_round2_team', {
+    admin_pwd: password,
+    p_player1_id: player1Id,
+    p_player2_id: player2Id,
+    p_team_name: teamName?.trim() || null,
+  });
+  if (error) throw new Error(error.message);
+  return data as CreateTeamResult;
+}
+
+export async function disbandRound2Team(password: string, teamId: string): Promise<DisbandTeamResult> {
+  const { data, error } = await supabase.rpc('disband_round2_team', {
+    admin_pwd: password,
+    p_team_id: teamId,
+  });
+  if (error) throw new Error(error.message);
+  return data as DisbandTeamResult;
+}
+
+export async function revealBroadcastMessage(
+  password: string,
+  reveal: boolean = true
+): Promise<RevealBroadcastResult> {
+  const { data, error } = await supabase.rpc('reveal_round2_broadcast_message', {
+    admin_pwd: password,
+    p_reveal: reveal,
+  });
+  if (error) throw new Error(error.message);
+  const result = data as RevealBroadcastResult;
+  if (result?.message !== undefined) {
+    result.message = normalizeBroadcastMessage(result.message);
+  }
+  return result;
+}
+
+export async function getBroadcastMessage(): Promise<Round2BroadcastMessage> {
+  const { data, error } = await supabase.rpc('get_round2_broadcast_message');
+  if (error) throw new Error(error.message);
+  const result = data as Round2BroadcastMessage;
+  if (result?.message !== undefined) {
+    result.message = normalizeBroadcastMessage(result.message);
+  }
+  return result;
 }

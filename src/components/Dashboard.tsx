@@ -31,6 +31,7 @@ import type { GameSessionState, ClueItem, GuessRecord } from '@/lib/types';
 import DoomMask from './DoomMask';
 import ArcaneCanvas from './ArcaneCanvas';
 import SignalLostOverlay from './SignalLostOverlay';
+import Round2TeamCard from './Round2TeamCard';
 import { useLockStatus } from '@/hooks/useLockStatus';
 import { sounds } from '@/lib/sound';
 
@@ -328,6 +329,11 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
             <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
               <span className="text-[#10b981] font-bold tracking-wide">{session.participant_name}</span>
               <span className="text-gray-500 text-[11px]">[RRN: {session.participant_id}]</span>
+              {session.team?.is_assigned && (
+                <span className="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-[10px] font-bold flex items-center gap-1">
+                  TEAM: {session.team.team_name}
+                </span>
+              )}
             </div>
           </div>
 
@@ -414,7 +420,17 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
 
 
       {/* --- Main Game Canvas --- */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-8 max-w-4xl mx-auto w-full">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-8 max-w-4xl mx-auto w-full space-y-6">
+        {/* Round 2 Tactical Syndicate Dossier Banner */}
+        <div className="w-full">
+          <Round2TeamCard
+            initialTeam={session.team}
+            currentParticipantName={session.participant_name}
+            currentParticipantId={session.participant_id}
+            currentScore={session.score}
+          />
+        </div>
+
         {/* VIEW A: NOT STARTED — Briefing & Begin Round 1 */}
         {session.round_status === 'NOT_STARTED' && (
           <div className="terminal-panel p-6 sm:p-10 border-t-2 border-t-[#10b981] max-w-2xl w-full text-center animate-fade-in shadow-[0_0_50px_rgba(0,0,0,0.8)]">
@@ -877,7 +893,7 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
           phase={lockPhase}
           playerName={session.participant_name}
           rrn={session.participant_id}
-          strikeCount={session.strikes}
+          strikeCount={session.wrong_guess_count}
           unlockedClues={session.unlocked_clues}
           currentClueNumber={session.current_clue}
         />

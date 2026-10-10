@@ -4,6 +4,7 @@ import { getGameState, clearSessionToken } from '@/lib/api';
 import type { GameSessionState } from '@/lib/types';
 import DoomMask from './DoomMask';
 import ArcaneCanvas from './ArcaneCanvas';
+import Round2TeamCard from './Round2TeamCard';
 import { sounds } from '@/lib/sound';
 
 interface CompletionProps {
@@ -187,6 +188,16 @@ export default function Completion({ onExit }: CompletionProps) {
                 <span className="text-gray-300">{new Date(session.completed_at).toLocaleString()}</span>
               </div>
             )}
+          </div>
+
+          {/* Round 2 Tactical Syndicate Dossier */}
+          <div className="mb-6 text-left">
+            <Round2TeamCard
+              initialTeam={session.team}
+              currentParticipantName={session.participant_name}
+              currentParticipantId={session.participant_id}
+              currentScore={session.score}
+            />
           </div>
 
           {/* Exit Action */}

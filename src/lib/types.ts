@@ -29,7 +29,35 @@ export interface RegisterResult {
   error?: string;
 }
 
+export interface PlayerTeamMember {
+  name: string;
+  participant_id: string;
+  score: number;
+  is_you?: boolean;
+  role?: string;
+}
+
+export interface PlayerTeamInfo {
+  is_assigned: boolean;
+  team_id?: string;
+  team_number?: number;
+  team_name?: string;
+  created_at?: string;
+  total_score?: number;
+  is_player1?: boolean;
+  player1?: PlayerTeamMember;
+  player2?: PlayerTeamMember;
+  you?: PlayerTeamMember;
+  teammate?: PlayerTeamMember;
+  participant_name?: string;
+  participant_id?: string;
+  broadcast_revealed?: boolean;
+  broadcast_message?: string | null;
+  error?: string;
+}
+
 export interface GameSessionState {
+  id?: string;
   participant_name: string;
   participant_id: string;
   round_status: RoundStatus;
@@ -44,6 +72,7 @@ export interface GameSessionState {
   assigned_domain_name?: string;
   unlocked_clues: ClueItem[];
   guesses: GuessRecord[];
+  team?: PlayerTeamInfo | null;
   error?: string;
 }
 
@@ -167,3 +196,79 @@ export interface ResolvePenaltyResult {
   player_status?: PlayerStatus;
   error?: string;
 }
+
+export interface Round2PlayerSummary {
+  id: string;
+  name: string;
+  participant_id: string;
+  round1_score: number;
+  round1_status: string;
+}
+
+export interface Round2TeamItem {
+  id: string;
+  team_number: number;
+  team_name: string;
+  created_at: string;
+  player1: Round2PlayerSummary;
+  player2: Round2PlayerSummary;
+  combined_round1_score: number;
+}
+
+export interface Round2TeamsData {
+  teams: Round2TeamItem[];
+  unassigned_players: Round2PlayerSummary[];
+  stats: {
+    total_players: number;
+    formed_teams_count: number;
+    assigned_players_count: number;
+    unassigned_players_count: number;
+  };
+  broadcast_revealed?: boolean;
+  broadcast_message?: string;
+  error?: string;
+}
+
+export interface CreateTeamResult {
+  success?: boolean;
+  team_id?: string;
+  team_name?: string;
+  team_number?: number;
+  error?: string;
+}
+
+export interface DisbandTeamResult {
+  success?: boolean;
+  error?: string;
+}
+
+export interface Round2BroadcastMessage {
+  is_revealed: boolean;
+  message: string;
+  revealed_at?: string | null;
+  error?: string;
+}
+
+export interface RevealBroadcastResult {
+  success?: boolean;
+  is_revealed?: boolean;
+  message?: string;
+  error?: string;
+}
+
+export const DEFAULT_SECRET_DIRECTIVE = `### ☠️ CLASSIFIED DIRECTIVE: OPERATION DOOM
+
+**Psst… You weren't supposed to see this.**
+
+Doom is hunting down players who have an unfair advantage. Your mission, should you choose to accept it, is to identify participants using **paid AI plans** while others rely on free-tier tools.
+
+Targets include Claude Pro, Claude Max, and other premium AI subscriptions that provide access to enhanced capabilities or usage limits.
+
+**Your reward:** 8 points from every confirmed target.
+
+**Your objective:** Find them. Report them. Help Doom restore balance.
+
+*Trust no one. Question everything. Doom is watching.*
+
+**This message is classified. Proceed discreetly.**`;
+
