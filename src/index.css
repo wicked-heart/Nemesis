@@ -1,0 +1,696 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Orbitron:wght@500;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --neon-green: #10b981;
+  --neon-cyan: #f59e0b;
+  --doom-emerald: #10b981;
+  --doom-emerald-glow: rgba(16, 185, 129, 0.45);
+  --doom-emerald-bright: #34d399;
+  --doom-emerald-dark: #042f1a;
+  --doom-gold: #f59e0b;
+  --doom-gold-glow: rgba(245, 158, 11, 0.45);
+  --doom-gold-bright: #fde047;
+  --doom-steel: #94a3b8;
+  --doom-titanium: #1e293b;
+  --deep-bg: #020704;
+  --panel-bg: rgba(6, 19, 13, 0.94);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--deep-bg);
+  color: #cbd5e1;
+  font-family: 'JetBrains Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+  selection-background-color: #10b981;
+  selection-color: #000;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Atmospheric Latverian Citadel Ambient Matrix */
+.cyber-grid {
+  background-color: #020604;
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(16, 185, 129, 0.18), transparent 70%),
+    radial-gradient(ellipse 70% 50% at 50% 115%, rgba(245, 158, 11, 0.12), transparent 70%),
+    linear-gradient(rgba(16, 185, 129, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 158, 11, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 38px 38px, 38px 38px;
+  background-position: center;
+}
+
+/* Surveillance Grid Overlay */
+.scanlines::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(16, 185, 129, 0.012) 3px,
+    rgba(16, 185, 129, 0.012) 6px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Typography Utility */
+.font-regal {
+  font-family: 'Cinzel', serif;
+}
+
+.font-title {
+  font-family: 'Orbitron', 'Cinzel', sans-serif;
+}
+
+/* Text glow & gradients */
+.neon-text {
+  color: #10b981;
+  text-shadow: 0 0 12px rgba(16, 185, 129, 0.4), 0 0 28px rgba(16, 185, 129, 0.2);
+}
+
+.neon-text-cyan {
+  color: #f59e0b;
+  text-shadow: 0 0 12px rgba(245, 158, 11, 0.4), 0 0 28px rgba(245, 158, 11, 0.2);
+}
+
+.doom-gold-gradient {
+  background: linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.doom-emerald-gradient {
+  background: linear-gradient(135deg, #a7f3d0 0%, #10b981 50%, #047857 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Doom Titanium & Emerald Fortress Panels */
+.terminal-panel {
+  background: linear-gradient(145deg, rgba(8, 22, 15, 0.94) 0%, rgba(4, 13, 9, 0.96) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.85),
+    0 0 30px rgba(16, 185, 129, 0.09),
+    inset 0 1px 0 rgba(245, 158, 11, 0.25),
+    inset 0 0 30px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(14px);
+  position: relative;
+}
+
+/* Regal Metallic Corner Accents */
+.terminal-panel::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 16px;
+  height: 16px;
+  border-top: 2px solid #f59e0b;
+  border-right: 2px solid #f59e0b;
+  pointer-events: none;
+}
+
+.terminal-panel::before {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: -1px;
+  width: 16px;
+  height: 16px;
+  border-bottom: 2px solid #10b981;
+  border-left: 2px solid #10b981;
+  pointer-events: none;
+}
+
+/* Final Trap Menacing Crimson Fortress Panel */
+.terminal-panel-final {
+  background: linear-gradient(145deg, rgba(32, 8, 8, 0.96) 0%, rgba(16, 3, 3, 0.98) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  box-shadow:
+    0 0 45px rgba(239, 68, 68, 0.22),
+    inset 0 0 40px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(14px);
+  position: relative;
+}
+
+.terminal-panel-final::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 16px;
+  height: 16px;
+  border-top: 2px solid #ef4444;
+  border-right: 2px solid #ef4444;
+  pointer-events: none;
+}
+
+.terminal-panel-final::before {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: -1px;
+  width: 16px;
+  height: 16px;
+  border-bottom: 2px solid #ef4444;
+  border-left: 2px solid #ef4444;
+  pointer-events: none;
+}
+
+/* Feature Dossier Cards */
+.doom-feature-card {
+  background: linear-gradient(180deg, rgba(7, 20, 14, 0.8) 0%, rgba(3, 10, 7, 0.9) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.doom-feature-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 0 0 25px rgba(16, 185, 129, 0.2);
+}
+
+.doom-feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #10b981, #f59e0b, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.doom-feature-card:hover::before {
+  opacity: 1;
+}
+
+/* Doom Sovereign Action Buttons */
+.cyber-btn {
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.16) 0%, rgba(6, 78, 59, 0.35) 100%);
+  border: 1px solid #10b981;
+  color: #34d399;
+  font-family: 'Cinzel', 'JetBrains Mono', serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2.2px;
+  padding: 13px 28px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.cyber-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.cyber-btn:hover {
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.3) 0%, rgba(6, 78, 59, 0.55) 100%);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.45), 0 0 8px #10b981;
+  text-shadow: 0 0 12px rgba(52, 211, 153, 0.9);
+  border-color: #34d399;
+  transform: translateY(-1px);
+}
+
+.cyber-btn:hover::before {
+  left: 100%;
+}
+
+.cyber-btn:active {
+  transform: translateY(1px);
+}
+
+.cyber-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Regal Imperial Gold Button */
+.cyber-btn-cyan {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.16) 0%, rgba(180, 83, 9, 0.35) 100%);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+.cyber-btn-cyan:hover {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.3) 0%, rgba(180, 83, 9, 0.55) 100%);
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.45), 0 0 8px #f59e0b;
+  text-shadow: 0 0 12px rgba(251, 191, 36, 0.9);
+  border-color: #fde047;
+}
+
+/* Inputs */
+.cyber-input {
+  background: rgba(3, 10, 6, 0.9);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 12px 16px;
+  width: 100%;
+  outline: none;
+  transition: all 0.25s ease;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.cyber-input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.35), inset 0 0 10px rgba(16, 185, 129, 0.1);
+}
+
+.cyber-input::placeholder {
+  color: rgba(16, 185, 129, 0.35);
+}
+
+/* Progress bar */
+.progress-track {
+  background: rgba(4, 14, 9, 0.95);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  height: 8px;
+  border-radius: 1px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.progress-fill {
+  background: linear-gradient(90deg, #059669 0%, #10b981 50%, #f59e0b 100%);
+  height: 100%;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.7);
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    text-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    text-shadow: 0 0 28px rgba(16, 185, 129, 0.8), 0 0 50px rgba(245, 158, 11, 0.35);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  96% { opacity: 1; }
+  97% { opacity: 0.85; }
+  98% { opacity: 0.98; }
+  99% { opacity: 0.92; }
+}
+
+.animate-flicker {
+  animation: flicker 6s linear infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+.animate-shake {
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes glow-red {
+  0%, 100% { box-shadow: 0 0 25px rgba(239, 68, 68, 0.25); }
+  50% { box-shadow: 0 0 45px rgba(239, 68, 68, 0.55); }
+}
+
+.animate-glow-red {
+  animation: glow-red 2s ease-in-out infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020704;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.3);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 158, 11, 0.5);
+}
+
+/* ====================================================================
+   CORRUPTED SIGNAL // DR. DOOM LOCK SCREEN ANIMATIONS
+   Palette: #0f2e1c, #1f6f43, #39ff88, #2b2f33, #6b7480, #c9a227
+   ==================================================================== */
+
+/* Phase 1: Authentic Broadcast Signal Corruption (Calibrated, No Violent Shaking) */
+@keyframes doomBroadcastGlitch {
+  0%, 88%, 100% {
+    transform: none;
+    filter: none;
+  }
+  89% {
+    transform: translateX(-3px);
+    filter: brightness(1.15);
+  }
+  91% {
+    transform: translateX(4px) skewX(0.5deg);
+    filter: contrast(1.2);
+  }
+  93% {
+    transform: translateX(-2px);
+    filter: brightness(0.9);
+  }
+  95% {
+    transform: none;
+    filter: none;
+  }
+}
+
+.doom-screen-jitter {
+  animation: doomBroadcastGlitch 2.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+
+/* Phase 1: Periodic RGB Chromatic Aberration Spikes */
+@keyframes doomRgbGlitch {
+  0%, 82%, 100% {
+    text-shadow: 0 0 15px rgba(57, 255, 136, 0.5);
+    transform: none;
+  }
+  84% {
+    text-shadow: -4px 0 #39ff88, 4px 0 #ff0055;
+    transform: translateX(-3px);
+  }
+  87% {
+    text-shadow: 5px 0 #00ffff, -5px 0 #c9a227;
+    transform: translateX(3px) skewX(1deg);
+  }
+  90% {
+    text-shadow: -3px 0 #39ff88, 3px 0 #1f6f43;
+    transform: translateX(-1px);
+  }
+  93% {
+    text-shadow: 0 0 20px rgba(57, 255, 136, 0.7);
+    transform: none;
+  }
+}
+
+.doom-rgb-glitch {
+  animation: doomRgbGlitch 2.4s steps(1, start) infinite;
+}
+
+/* CRT Horizontal Glitch Slice Displacement Bands */
+@keyframes doomSliceBand1 {
+  0%, 84%, 100% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  85% {
+    opacity: 0.8;
+    transform: translateX(-18px) scaleY(1.3);
+  }
+  87% {
+    opacity: 0.6;
+    transform: translateX(22px) scaleY(0.7);
+  }
+  89% {
+    opacity: 0.9;
+    transform: translateX(-8px);
+  }
+  91% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+}
+
+@keyframes doomSliceBand2 {
+  0%, 72%, 100% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+  73% {
+    opacity: 0.7;
+    transform: translateX(24px) scaleY(1.5);
+  }
+  75% {
+    opacity: 0.5;
+    transform: translateX(-16px) scaleY(0.8);
+  }
+  77% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+}
+
+.doom-slice-band-1 {
+  animation: doomSliceBand1 2.8s ease-in-out infinite;
+}
+
+.doom-slice-band-2 {
+  animation: doomSliceBand2 3.4s ease-in-out 0.9s infinite;
+}
+
+/* CRT Vertical Rolling Scanline */
+@keyframes doomCrtRoll {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+.doom-crt-roll {
+  animation: doomCrtRoll 4s linear infinite;
+}
+
+/* Fine Phosphor Horizontal CRT Scanlines (Replaces dotted mesh) */
+.doom-crt-scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.5) 0px,
+    rgba(0, 0, 0, 0.5) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* Dual-Layer RGB Aberration Ghosting */
+@keyframes doomGhostRed {
+  0%, 82%, 100% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  84% {
+    opacity: 0.9;
+    transform: translate(-4px, -1px);
+    clip-path: inset(15% 0 25% 0);
+  }
+  87% {
+    opacity: 0.7;
+    transform: translate(3px, 1px);
+    clip-path: inset(50% 0 10% 0);
+  }
+  89% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes doomGhostCyan {
+  0%, 82%, 100% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  85% {
+    opacity: 0.9;
+    transform: translate(4px, 1px);
+    clip-path: inset(10% 0 45% 0);
+  }
+  88% {
+    opacity: 0.7;
+    transform: translate(-3px, 0);
+    clip-path: inset(40% 0 20% 0);
+  }
+  90% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+}
+
+.doom-rgb-ghost-red {
+  animation: doomGhostRed 2.4s steps(1, start) infinite;
+}
+
+.doom-rgb-ghost-cyan {
+  animation: doomGhostCyan 2.4s steps(1, start) infinite;
+}
+
+/* High-Voltage Horizontal Noise Streak */
+@keyframes doomNoiseStreak {
+  0%, 92%, 100% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  93% {
+    opacity: 0.85;
+    transform: scaleX(1);
+  }
+  94% {
+    opacity: 0.3;
+    transform: scaleX(0.7) translateX(30px);
+  }
+  95% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+}
+
+.doom-noise-streak {
+  animation: doomNoiseStreak 3.2s ease-out infinite;
+}
+
+/* Horizontal Scanline Tearing */
+@keyframes doomScanlineTear {
+  0% {
+    clip-path: inset(0 0 0 0);
+    transform: translateX(0);
+  }
+  15% {
+    clip-path: inset(20% 0 65% 0);
+    transform: translateX(-8px);
+  }
+  30% {
+    clip-path: inset(45% 0 35% 0);
+    transform: translateX(6px);
+  }
+  45% {
+    clip-path: inset(70% 0 10% 0);
+    transform: translateX(-4px);
+  }
+  60% {
+    clip-path: inset(10% 0 80% 0);
+    transform: translateX(7px);
+  }
+  75% {
+    clip-path: inset(80% 0 5% 0);
+    transform: translateX(-5px);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    transform: translateX(0);
+  }
+}
+
+.doom-scanline-tear {
+  animation: doomScanlineTear 1.2s steps(2, start) infinite;
+}
+
+/* Ambient Static / Noise Flicker (Photosensitive-safe: <= 2.5hz) */
+@keyframes doomStaticFlicker {
+  0%, 100% { opacity: 0.95; }
+  35% { opacity: 0.88; }
+  70% { opacity: 0.92; }
+}
+
+.doom-static-flicker {
+  animation: doomStaticFlicker 1.8s ease-in-out infinite;
+}
+
+/* Heraldic Emblem Pulse & Distortion */
+@keyframes doomHeraldicGlitch {
+  0%, 90%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 15px rgba(57, 255, 136, 0.45));
+  }
+  92% {
+    transform: scale(1.02) skewX(2deg);
+    filter: drop-shadow(0 0 25px rgba(201, 162, 39, 0.7));
+  }
+  95% {
+    transform: scale(0.98) skewX(-2deg);
+    filter: drop-shadow(0 0 20px rgba(57, 255, 136, 0.8));
+  }
+}
+
+.doom-heraldic-pulse {
+  animation: doomHeraldicGlitch 4.5s ease-in-out infinite;
+}
+
+/* Sweeping Radar / Restoration Scanline */
+@keyframes doomRadarSweep {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+.doom-radar-sweep {
+  animation: doomRadarSweep 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* Accessibility: Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .doom-screen-jitter,
+  .doom-scanline-tear,
+  .doom-rgb-glitch {
+    animation: none !important;
+    transform: none !important;
+    text-shadow: 0 0 10px rgba(57, 255, 136, 0.6) !important;
+  }
+  .doom-heraldic-pulse {
+    animation: none !important;
+    filter: drop-shadow(0 0 15px rgba(57, 255, 136, 0.4)) !important;
+  }
+}
+
