@@ -194,6 +194,8 @@ export interface ResolvePenaltyResult {
   success?: boolean;
   session_id?: string;
   player_status?: PlayerStatus;
+  current_clue?: number;
+  round_status?: RoundStatus;
   error?: string;
 }
 

@@ -32,7 +32,7 @@ export default function App() {
         try {
           const state = await getGameState();
           if (state && !state.error) {
-            if (state.round_status === 'COMPLETED' || state.round_status === 'FAILED') {
+            if ((state.round_status === 'COMPLETED' || state.round_status === 'FAILED') && state.player_status !== 'PENALTY_PENDING') {
               setView('completion');
             } else {
               setView('dashboard');

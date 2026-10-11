@@ -680,6 +680,14 @@ BEGIN
 
   v_clue := v_session.current_clue;
 
+  -- Enforce 1 guess chance per clue:
+  IF EXISTS (
+    SELECT 1 FROM public.guess_history
+    WHERE game_session_id = v_session.id AND clue_number = v_clue
+  ) THEN
+    RETURN json_build_object('error', 'already_guessed_on_clue', 'clue_number', v_clue);
+  END IF;
+
   -- Validate guess against domain
   v_is_correct := public.check_domain_match(p_guess, v_domain.slug);
 
@@ -754,20 +762,18 @@ BEGIN
     INSERT INTO public.penalty_history (game_session_id, penalty_type, status)
     VALUES (v_session.id, 'WRONG_GUESS', 'PENDING');
 
-    -- If clue 15 was reached, final guess was exhausted
-    IF v_clue >= 15 THEN
+    -- If clue 15 was reached or 15 wrong guesses, final attempt was made
+    IF v_clue >= 15 OR v_new_wrong >= 15 THEN
       UPDATE public.game_sessions
       SET wrong_guess_count = v_new_wrong,
           player_status = 'PENALTY_PENDING',
-          round_status = 'FAILED',
-          completed_at = now(),
           updated_at = now()
       WHERE id = v_session.id;
 
       RETURN json_build_object(
         'correct', false,
         'exhausted', true,
-        'round_status', 'FAILED',
+        'round_status', v_session.round_status,
         'player_status', 'PENALTY_PENDING',
         'wrong_guess_count', v_new_wrong,
         'domain_name', v_domain.name
@@ -1110,6 +1116,8 @@ AS $$
 DECLARE
   pwd_hash text;
   v_session public.game_sessions%ROWTYPE;
+  v_next_clue integer;
+  v_new_round_status text;
 BEGIN
   SELECT password_hash INTO pwd_hash FROM public.admin_config LIMIT 1;
   IF pwd_hash IS NULL OR extensions.crypt(admin_pwd, pwd_hash) != pwd_hash THEN
@@ -1125,11 +1133,28 @@ BEGIN
     RETURN json_build_object('error', 'no_pending_penalty');
   END IF;
 
-  -- Update player status to NORMAL without altering round_status or current_clue
-  UPDATE public.game_sessions
-  SET player_status = 'NORMAL',
-      updated_at = now()
-  WHERE id = p_session_id;
+  -- If player already reached clue 15 or 15 wrong guesses, all 15 attempts are exhausted
+  IF v_session.current_clue >= 15 OR v_session.wrong_guess_count >= 15 THEN
+    v_next_clue := v_session.current_clue;
+    v_new_round_status := 'FAILED';
+
+    UPDATE public.game_sessions
+    SET player_status = 'NORMAL',
+        round_status = 'FAILED',
+        completed_at = COALESCE(completed_at, now()),
+        updated_at = now()
+    WHERE id = p_session_id;
+  ELSE
+    -- Automatically advance player to the next clue
+    v_next_clue := v_session.current_clue + 1;
+    v_new_round_status := v_session.round_status;
+
+    UPDATE public.game_sessions
+    SET player_status = 'NORMAL',
+        current_clue = v_next_clue,
+        updated_at = now()
+    WHERE id = p_session_id;
+  END IF;
 
   -- Mark pending penalties as RESOLVED
   UPDATE public.penalty_history
@@ -1140,12 +1165,14 @@ BEGIN
 
   -- Record audit log
   INSERT INTO public.admin_audit_log (admin_id, game_session_id, action)
-  VALUES ('admin', p_session_id, 'RESOLVED_PENALTY_TO_NORMAL');
+  VALUES ('admin', p_session_id, 'RESOLVED_PENALTY_ADVANCED_TO_CLUE_' || v_next_clue::text);
 
   RETURN json_build_object(
     'success', true,
     'session_id', p_session_id,
-    'player_status', 'NORMAL'
+    'player_status', 'NORMAL',
+    'current_clue', v_next_clue,
+    'round_status', v_new_round_status
   );
 END;
 $$;

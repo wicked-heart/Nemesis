@@ -66,7 +66,7 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
         return;
       }
       setSession(data);
-      if (data.round_status === 'COMPLETED' || data.round_status === 'FAILED') {
+      if ((data.round_status === 'COMPLETED' || data.round_status === 'FAILED') && data.player_status !== 'PENALTY_PENDING') {
         onComplete();
       }
     } catch (err) {
@@ -82,6 +82,32 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
     sessionId: session?.id,
     onRefreshSession: fetchSession,
   });
+
+  // Client-side auto-advance safeguard: if unlocked and current clue already had a wrong guess, auto-advance
+  const autoAdvancingRef = useRef(false);
+  useEffect(() => {
+    if (
+      session &&
+      session.round_status === 'ACTIVE' &&
+      session.player_status === 'NORMAL' &&
+      !isLocked &&
+      !autoAdvancingRef.current &&
+      session.current_clue < 15
+    ) {
+      const hasWrongGuessOnCurrent = session.guesses.some(
+        (g) => g.clue_number === session.current_clue && !g.is_correct
+      );
+      if (hasWrongGuessOnCurrent) {
+        autoAdvancingRef.current = true;
+        revealNextClue()
+          .then(() => fetchSession())
+          .catch((e) => console.error('Auto-advance clue error:', e))
+          .finally(() => {
+            autoAdvancingRef.current = false;
+          });
+      }
+    }
+  }, [session, isLocked, fetchSession]);
 
 
   useEffect(() => {
@@ -197,6 +223,20 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
     const trimmed = guessInput.trim();
     if (!trimmed || guessSubmitting || isLocked) return;
 
+    // Frontend guard: 1 chance per clue
+    const hasAlreadyGuessed = session?.guesses.some(
+      (g) => g.clue_number === session.current_clue
+    );
+    if (hasAlreadyGuessed) {
+      sounds.playError();
+      setFeedback({
+        type: 'warning',
+        message: `Attempt already used for Clue ${session?.current_clue}.`,
+        details: 'You only get one chance per clue to guess the domain (15 attempts maximum). Reveal the next clue to continue.',
+      });
+      return;
+    }
+
     sounds.playClick();
     setGuessSubmitting(true);
     setFeedback(null);
@@ -227,6 +267,17 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
         return;
       }
 
+      if (res.error === 'already_guessed_on_clue') {
+        sounds.playError();
+        setFeedback({
+          type: 'warning',
+          message: `Attempt already used for Clue ${session?.current_clue}!`,
+          details: 'Each clue permits only one domain guess (maximum 15 attempts total). Reveal the next clue to continue.',
+        });
+        await fetchSession();
+        return;
+      }
+
       if (res.correct) {
         sounds.playSuccess();
         const bonusText = res.time_multiplier && res.time_multiplier !== 1
@@ -245,17 +296,15 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
         if (res.exhausted) {
           setFeedback({
             type: 'error',
-            message: 'Final guess incorrect after Clue 15. Round 1 has failed.',
-            details: `The correct domain was: ${res.domain_name}`,
+            message: 'Final attempt (15/15) incorrect. Transmission severed!',
+            details: 'Maximum 15 attempts reached. Screen locked in penance. Await admin unlock to conclude your trial.',
           });
-          setTimeout(() => {
-            onComplete();
-          }, 2000);
+          await fetchSession();
         } else {
           setFeedback({
             type: 'warning',
-            message: `"${trimmed}" is incorrect. Wrong guess recorded.`,
-            details: 'Player status updated to PENALTY_PENDING. Transmission severed until pardoned by an admin.',
+            message: `"${trimmed}" is incorrect. Strike ${res.wrong_guess_count || (session?.wrong_guess_count ?? 0) + 1}/15 recorded.`,
+            details: `Screen locked. Await admin unlock to restore signal and automatically advance to Clue ${(session?.current_clue ?? 1) + 1}.`,
           });
           await fetchSession();
         }
@@ -311,6 +360,10 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
 
   const currentClueObj = session.unlocked_clues.find(
     (c) => c.clue_number === session.current_clue
+  );
+
+  const currentClueHasGuess = Boolean(
+    session.guesses.some((g) => g.clue_number === session.current_clue)
   );
 
   return (
@@ -474,9 +527,21 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
                 </span>
               </p>
               <p className="flex items-start gap-2">
+                <span className="text-[#f59e0b] font-bold">&bull;</span>
+                <span>
+                  <strong>One Chance Per Clue:</strong> You get only <strong>1 attempt per clue</strong> to identify the domain. Across all 15 clues, you have a <strong>maximum of 15 attempts total</strong>.
+                </span>
+              </p>
+              <p className="flex items-start gap-2">
+                <span className="text-red-400 font-bold">&bull;</span>
+                <span>
+                  <strong>Lockout &amp; Auto-Advance:</strong> If you guess incorrectly, your screen immediately locks in penance. Once an administrator unlocks your terminal, you are <strong>automatically sent to the next clue</strong>!
+                </span>
+              </p>
+              <p className="flex items-start gap-2">
                 <span className="text-gray-400 font-bold">&bull;</span>
                 <span>
-                  At any point, submit your domain guess or reveal the next clue. Revealing clues never penalizes you!
+                  Revealing the next clue without guessing never penalizes you.
                 </span>
               </p>
             </div>
@@ -730,9 +795,23 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
 
                 {/* Guess Submission Card */}
                 <div className="terminal-panel p-6 border border-gray-800">
-                  <div className="flex items-center gap-2 mb-3 font-mono text-xs text-[#10b981] font-bold uppercase tracking-wider">
-                    <Target size={14} />
-                    <span>IDENTIFY THE HIDDEN DOMAIN</span>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3 font-mono text-xs">
+                    <div className="flex items-center gap-2 text-[#10b981] font-bold uppercase tracking-wider">
+                      <Target size={14} />
+                      <span>IDENTIFY THE HIDDEN DOMAIN (CLUE {session.current_clue} / 15)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border ${
+                        currentClueHasGuess
+                          ? 'bg-amber-950/60 border-amber-500/50 text-amber-300'
+                          : 'bg-emerald-950/60 border-emerald-500/50 text-[#10b981]'
+                      }`}>
+                        {currentClueHasGuess ? 'CHANCE USED FOR THIS CLUE' : '1 CHANCE ALLOCATED'}
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-black/60 border border-gray-700 text-gray-300 text-[10px] font-bold">
+                        ATTEMPTS: {session.wrong_guess_count} / 15 MAX
+                      </span>
+                    </div>
                   </div>
 
                   <form onSubmit={handleSubmitGuess} className="space-y-3 font-mono">
@@ -741,26 +820,52 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
                         type="text"
                         value={guessInput}
                         onChange={(e) => setGuessInput(e.target.value)}
-                        placeholder={isLocked ? "Transmission locked by Doom..." : "Enter domain name..."}
-                        disabled={guessSubmitting || isLocked}
+                        placeholder={
+                          isLocked
+                            ? "Transmission locked by Doom..."
+                            : currentClueHasGuess
+                            ? `1 chance used on Clue ${session.current_clue}. Advance to next clue.`
+                            : `Enter domain guess (1 chance on Clue ${session.current_clue})...`
+                        }
+                        disabled={guessSubmitting || isLocked || currentClueHasGuess}
                         className="cyber-input flex-1 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        autoFocus={!isLocked}
+                        autoFocus={!isLocked && !currentClueHasGuess}
                       />
                       <button
                         type="submit"
-                        disabled={guessSubmitting || !guessInput.trim() || isLocked}
+                        disabled={guessSubmitting || !guessInput.trim() || isLocked || currentClueHasGuess}
                         className="cyber-btn text-xs px-6 py-2.5 flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {guessSubmitting ? (
                           <>
                             <Loader2 size={14} className="animate-spin" /> VERIFYING...
                           </>
+                        ) : currentClueHasGuess ? (
+                          <>
+                            <Lock size={14} className="text-amber-400" /> CHANCE USED
+                          </>
                         ) : (
                           <>
-                            <Shield size={14} /> SUBMIT GUESS
+                            <Shield size={14} /> SUBMIT GUESS (1 CHANCE)
                           </>
                         )}
                       </button>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between text-[11px] text-gray-400 pt-1 gap-2 border-t border-gray-800/60">
+                      <div className="flex items-center gap-1.5">
+                        <span className={currentClueHasGuess ? "text-amber-400 font-bold" : "text-[#10b981] font-bold"}>
+                          &bull;
+                        </span>
+                        <span>
+                          {currentClueHasGuess
+                            ? `You have already used your 1 attempt for Clue ${session.current_clue}. Reveal the next clue to continue.`
+                            : `You have 1 attempt for Clue ${session.current_clue}. Maximum 15 attempts total across the entire round.`}
+                        </span>
+                      </div>
+                      <div className="text-gray-500 text-[10px]">
+                        Wrong guess locks terminal &bull; Admin unlock automatically advances to next clue
+                      </div>
                     </div>
                   </form>
                 </div>

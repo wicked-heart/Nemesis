@@ -103,12 +103,12 @@ export default function SignalLostOverlay({
           </h2>
 
           <p className="font-cinzel font-semibold text-sm sm:text-base text-emerald-100 leading-relaxed mb-4">
-            &ldquo;DOOM HAS GRANTED YOUR PARDON. DO NOT WASTE IT.&rdquo;
+            &ldquo;DOOM HAS GRANTED YOUR PARDON. ADVANCING TO NEXT CLUE.&rdquo;
           </p>
 
           <div className="text-[11px] text-emerald-400/80 tracking-wider flex items-center justify-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#39ff88] animate-ping" />
-            RE-ESTABLISHING SECURE LATVERIAN UPLINK...
+            RE-ESTABLISHING UPLINK &bull; SYNCHRONIZING NEXT TRANSMISSION...
           </div>
         </div>
       </div>
@@ -260,22 +260,38 @@ export default function SignalLostOverlay({
         <div className="w-full space-y-3.5">
           {/* BOX 1: PENALTY PROTOCOL ENFORCED (Static Instruction Block) */}
           <div className="w-full bg-[#0e2117]/90 border-2 border-[#c9a227]/70 rounded-lg p-4 sm:p-5 shadow-[0_0_25px_rgba(201,162,39,0.25)] text-left font-mono">
-            <div className="flex items-center gap-2 text-[#c9a227] font-bold text-xs uppercase tracking-widest border-b border-[#c9a227]/30 pb-2 mb-3">
-              <AlertOctagon size={16} /> PENALTY PROTOCOL ENFORCED
+            <div className="flex items-center justify-between border-b border-[#c9a227]/30 pb-2 mb-3">
+              <div className="flex items-center gap-2 text-[#c9a227] font-bold text-xs uppercase tracking-widest">
+                <AlertOctagon size={16} /> PENALTY PROTOCOL ENFORCED
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded bg-red-950/80 border border-red-500/50 text-red-300 font-bold tracking-wider">
+                ATTEMPTS USED: {strikeCount} / 15 MAX
+              </span>
             </div>
             <p className="text-gray-200 text-xs sm:text-sm leading-relaxed mb-3">
               REPORT TO: <span className="text-[#39ff88] font-bold">[PENALTY STATION / VOLUNTEER NAME]</span>. Complete your penance. Await Doom&apos;s pardon.
             </p>
-            <div className="text-[11px] text-gray-400 bg-black/50 p-2.5 rounded border border-gray-800 flex items-center gap-2">
+            <div className="text-[11px] text-gray-300 bg-black/50 p-2.5 rounded border border-gray-800 flex items-center gap-2">
               <Lock size={14} className="text-red-400 shrink-0" />
-              <span>Admin authorization required to clear lockout and reinstate clue transmission.</span>
+              <span>
+                {currentClueNumber < 15
+                  ? `One guess per clue permitted. When an admin unlocks your terminal, you will automatically be sent to Clue #${currentClueNumber + 1}.`
+                  : 'Final attempt (15/15) reached. Admin authorization will conclude your trial.'}
+              </span>
             </div>
           </div>
 
           {/* BOX 2: ACTIVE TRANSMISSION / NEXT CLUE REDACTED STATUS */}
           <div className="w-full bg-[#0b1610]/90 border border-[#1f6f43]/60 rounded-lg p-4 font-mono text-left shadow-[0_0_20px_rgba(0,0,0,0.6)]">
             <div className="flex items-center justify-between text-[11px] text-gray-400 mb-2">
-              <span>ACTIVE TRANSMISSION (CLUE #{currentClueNumber})</span>
+              <span>
+                TRANSMISSION LOCKED AT CLUE #{currentClueNumber}
+                {currentClueNumber < 15 && (
+                  <span className="text-[#39ff88] font-semibold ml-2">
+                    &bull; NEXT: CLUE #{currentClueNumber + 1} UPON UNLOCK
+                  </span>
+                )}
+              </span>
               <span className="text-red-400 font-bold uppercase tracking-wider flex items-center gap-1">
                 <Lock size={11} /> LOCKED
               </span>

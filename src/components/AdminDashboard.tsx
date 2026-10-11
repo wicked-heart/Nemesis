@@ -606,8 +606,8 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                       <th className="py-3 px-3">Assigned Domain</th>
                       <th className="py-3 px-2 text-center">Round Status</th>
                       <th className="py-3 px-2 text-center">Player Status</th>
-                      <th className="py-3 px-2 text-center">Clue</th>
-                      <th className="py-3 px-2 text-center">Wrong</th>
+                      <th className="py-3 px-2 text-center">Clue Progress</th>
+                      <th className="py-3 px-2 text-center">Attempts Used</th>
                       <th className="py-3 px-2 text-center">Score</th>
                       <th className="py-3 px-3">Started</th>
                       <th className="py-3 px-3 text-right">Actions</th>
@@ -686,14 +686,14 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                               {p.current_clue > 0 ? `${p.current_clue} / 15` : '-'}
                             </td>
 
-                            {/* Wrong Guesses */}
+                            {/* Wrong Guesses / Attempts Used */}
                             <td className="py-3 px-2 text-center">
                               <span
                                 className={`font-bold ${
                                   p.wrong_guess_count > 0 ? 'text-red-400' : 'text-gray-500'
                                 }`}
                               >
-                                {p.wrong_guess_count}
+                                {p.wrong_guess_count} / 15
                               </span>
                             </td>
 
@@ -715,14 +715,22 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                                     onClick={() => handleResolvePenalty(p.session_id)}
                                     disabled={resolvingId === p.session_id}
                                     className="px-2 py-1 rounded bg-amber-500/10 border border-amber-500/50 text-[#f59e0b] hover:bg-amber-500/20 text-[10px] font-bold transition-colors flex items-center gap-1"
-                                    title="Mark player status as NORMAL"
+                                    title={
+                                      p.current_clue < 15
+                                        ? `Unlock player and automatically advance to Clue ${p.current_clue + 1}`
+                                        : 'Unlock player and conclude round (15 attempts exhausted)'
+                                    }
                                   >
                                     {resolvingId === p.session_id ? (
                                       <Loader2 size={10} className="animate-spin" />
                                     ) : (
                                       <ShieldCheck size={11} />
                                     )}
-                                    <span>Resolve Penalty</span>
+                                    <span>
+                                      {p.current_clue < 15
+                                        ? `Unlock \u2192 Clue ${p.current_clue + 1}`
+                                        : 'Unlock & Conclude (15/15)'}
+                                    </span>
                                   </button>
                                 )}
 
@@ -1569,20 +1577,28 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                 {detailData.player_status === 'PENALTY_PENDING' && (
                   <div className="p-3.5 rounded bg-amber-950/40 border border-amber-500/50 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div className="flex items-center gap-2 text-[#f59e0b]">
-                      <AlertTriangle size={16} />
-                      <span>Outstanding penalty pending administrative resolution.</span>
+                      <AlertTriangle size={16} className="shrink-0" />
+                      <span className="text-xs">
+                        {detailData.current_clue < 15
+                          ? `Outstanding penalty on Clue ${detailData.current_clue} (Attempt ${detailData.wrong_guess_count}/15). Resolving will unlock terminal and automatically advance player to Clue ${detailData.current_clue + 1}.`
+                          : `Final attempt (15/15) penalty on Clue 15. Resolving will unlock terminal and conclude the round.`}
+                      </span>
                     </div>
                     <button
                       onClick={() => handleResolvePenalty(detailData.session_id)}
                       disabled={resolvingId === detailData.session_id}
-                      className="cyber-btn text-xs px-4 py-1.5 flex items-center gap-1.5"
+                      className="cyber-btn text-xs px-4 py-1.5 flex items-center gap-1.5 whitespace-nowrap shrink-0"
                     >
                       {resolvingId === detailData.session_id ? (
                         <Loader2 size={12} className="animate-spin" />
                       ) : (
                         <ShieldCheck size={13} />
                       )}
-                      <span>Resolve Penalty to NORMAL</span>
+                      <span>
+                        {detailData.current_clue < 15
+                          ? `Unlock \u2192 Clue ${detailData.current_clue + 1}`
+                          : 'Unlock & Conclude Round'}
+                      </span>
                     </button>
                   </div>
                 )}
