@@ -187,8 +187,9 @@ Once Round 1 completes, competitors transition into **Round 2 (Tactical Syndicat
 
 ### Team Formation (Pairs of 2)
 - Competitors are paired into two-person syndicates (`round2_teams`).
-- Admin can trigger **Automatic Balanced Team Generation** (pairing top scorers with emerging challengers or sequential pairs) or manually create custom pairs.
+- Admin can manually pair competitors or create custom teams from the Admin Supervisory Console.
 - Combined syndicate scores are calculated in real time (`player1.score + player2.score`).
+- **Begin Round 2 Gatekeeper Control:** Round 2 teams and directives are **completely concealed from all players** until the Admin clicks **"Begin Round 2"** in the supervisory console (`#/admin`). Prior to activation, players' terminals render a sealed standby dossier and database RPCs refuse to disclose partner or team details.
 
 ### Classified Directive: Operation Doom
 A covert side-quest mechanism managed by administrators through `round2_announcements`:
@@ -490,7 +491,8 @@ c:\Users\Musamuraaz\Desktop\project\
         ├── 20261010110500_add_time_scoring_and_timeout.sql
         ├── 20261010190000_add_round2_teams.sql
         ├── 20261011085000_one_guess_per_clue_auto_advance.sql
-        └── 20261012211500_normalize_and_expand_domain_guesses.sql # Latest migration: expanded synonyms & normalization
+        ├── 20261012211500_normalize_and_expand_domain_guesses.sql
+        └── 20261013002000_add_begin_round2_control.sql # Latest migration: Begin Round 2 admin control
 ```
 
 ---
@@ -514,7 +516,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 3. Run `supabase/migrations/20261010190000_add_round2_teams.sql` to initialize Round 2 teams and announcements.
 4. Run `supabase/migrations/20261011085000_one_guess_per_clue_auto_advance.sql` to apply single-guess and auto-advance rules.
 5. Run `supabase/migrations/20261012211500_normalize_and_expand_domain_guesses.sql` to update `check_domain_match` with all normalized domain guess words and related terms.
-6. Set your administrative password using `supabase/set_admin_password.sql` (default password configured: `admin123`).
+6. Run `supabase/migrations/20261013002000_add_begin_round2_control.sql` to apply the 'Begin Round 2' admin gatekeeper control.
+7. Set your administrative password using `supabase/set_admin_password.sql` (default password configured: `admin123`).
 
 ### Local Development
 ```bash

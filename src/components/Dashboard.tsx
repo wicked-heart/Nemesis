@@ -138,7 +138,10 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
           details: 'Your trial period has concluded. Automatically submitting round and generating performance dossier...',
         });
         try {
-          await timeoutRound();
+          const tRes = await timeoutRound();
+          if (tRes && (tRes as any).domain_name) {
+            localStorage.setItem('nemesis_revealed_domain', (tRes as any).domain_name);
+          }
         } catch (e) {
           console.error('Auto timeout error:', e);
         }
@@ -189,6 +192,9 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
       const res = await revealNextClue();
       if (res.timed_out || res.error === 'round_timed_out') {
         sounds.playError();
+        if ((res as any).domain_name) {
+          localStorage.setItem('nemesis_revealed_domain', (res as any).domain_name);
+        }
         setFeedback({
           type: 'error',
           message: '15-minute countdown expired. Automatically finalizing round...',
@@ -248,6 +254,9 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
 
       if (res.timed_out || res.error === 'round_timed_out') {
         sounds.playError();
+        if (res.domain_name) {
+          localStorage.setItem('nemesis_revealed_domain', res.domain_name);
+        }
         setFeedback({
           type: 'error',
           message: '15-minute countdown expired. Automatically submitting round...',
@@ -281,6 +290,9 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
 
       if (res.correct) {
         sounds.playSuccess();
+        if (res.domain_name) {
+          localStorage.setItem('nemesis_revealed_domain', res.domain_name);
+        }
         const bonusText = res.time_multiplier && res.time_multiplier !== 1
           ? ` (${res.time_multiplier}x ${res.speed_tier} Speed Multiplier applied)`
           : '';

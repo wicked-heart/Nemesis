@@ -30,6 +30,7 @@ import {
   UserCheck,
   Megaphone,
   EyeOff,
+  Zap,
 } from 'lucide-react';
 import {
   getAdminDashboard,
@@ -39,6 +40,7 @@ import {
   createRound2Team,
   disbandRound2Team,
   revealBroadcastMessage,
+  setRound2Active,
 } from '@/lib/api';
 import type {
   AdminDashboardData,
@@ -89,6 +91,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
   const [teamsSearchQuery, setTeamsSearchQuery] = useState('');
   const [teamFeedback, setTeamFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [broadcasting, setBroadcasting] = useState(false);
+  const [togglingRound2, setTogglingRound2] = useState(false);
 
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -129,7 +132,8 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
 
   useEffect(() => {
     loadDashboard();
-  }, [loadDashboard]);
+    loadTeamsData();
+  }, [loadDashboard, loadTeamsData]);
 
   // Load Round 2 teams whenever switching to the teams tab
   useEffect(() => {
@@ -279,6 +283,41 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
     }
   };
 
+  const handleToggleRound2Active = async () => {
+    sounds.playClick();
+    setTogglingRound2(true);
+    setTeamFeedback(null);
+    const willActivate = !teamsData?.is_round2_active;
+
+    // Optimistically toggle so button responds immediately
+    setTeamsData((prev) => (prev ? { ...prev, is_round2_active: willActivate } : prev));
+
+    try {
+      const res = await setRound2Active(password, willActivate);
+      if (res.error) {
+        setTeamsData((prev) => (prev ? { ...prev, is_round2_active: !willActivate } : prev));
+        setTeamFeedback({ type: 'error', message: res.error });
+      } else {
+        sounds.playSuccess();
+        setTeamFeedback({
+          type: 'success',
+          message: willActivate
+            ? 'Round 2 has officially begun! Team details & directives are now unlocked on all player screens.'
+            : 'Round 2 paused. Team details & directives are now concealed from all player screens.',
+        });
+        await loadTeamsData();
+      }
+    } catch (err) {
+      setTeamsData((prev) => (prev ? { ...prev, is_round2_active: !willActivate } : prev));
+      setTeamFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to update Round 2 status',
+      });
+    } finally {
+      setTogglingRound2(false);
+    }
+  };
+
   const handleOpenDetail = async (sessionId: string) => {
     sounds.playClick();
     setSelectedSessionId(sessionId);
@@ -420,6 +459,18 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
           </div>
 
           <div className="flex items-center gap-2">
+            <div
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-mono tracking-wider transition-all ${
+                teamsData?.is_round2_active
+                  ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                  : 'border-gray-800 bg-black/40 text-gray-400'
+              }`}
+              title={teamsData?.is_round2_active ? 'Round 2 is active on all player screens' : 'Round 2 is locked from all players'}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${teamsData?.is_round2_active ? 'bg-emerald-400 animate-ping' : 'bg-gray-600'}`} />
+              <span>{teamsData?.is_round2_active ? 'ROUND 2: ACTIVE' : 'ROUND 2: STANDBY'}</span>
+            </div>
+
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
               className={`chip transition-colors ${
@@ -436,6 +487,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
               onClick={() => {
                 sounds.playClick();
                 loadDashboard();
+                loadTeamsData();
               }}
               className="cyber-btn cyber-btn-cyan text-[11px] px-3.5 py-1.5 flex items-center gap-1.5"
             >
@@ -546,6 +598,15 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
           >
             <Users2 size={14} className="text-cyan-400" />
             <span>ROUND 2 TEAMS (PAIRS OF 2) {teamsData ? `(${teamsData.teams.length})` : ''}</span>
+            <span
+              className={`px-2 py-0.5 rounded text-[9px] font-bold border tracking-wider uppercase ${
+                teamsData?.is_round2_active
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 animate-pulse'
+                  : 'bg-black/60 text-gray-400 border-gray-700'
+              }`}
+            >
+              {teamsData?.is_round2_active ? 'ACTIVE' : 'LOCKED'}
+            </span>
           </button>
         </div>
 
@@ -925,6 +986,77 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                 </button>
               </div>
             )}
+
+            {/* Sovereign Round 2 Commencing Command Bar */}
+            <div
+              className={`p-5 rounded-xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all shadow-xl relative overflow-hidden ${
+                teamsData?.is_round2_active
+                  ? 'bg-gradient-to-r from-emerald-950/60 to-black/80 border-emerald-500/60 shadow-[0_0_30px_rgba(16,185,129,0.2)]'
+                  : 'bg-gradient-to-r from-zinc-950/80 to-black/90 border-cyan-500/40 shadow-[0_0_25px_rgba(6,182,212,0.15)]'
+              }`}
+            >
+              <div className="flex items-center gap-3.5">
+                <div
+                  className={`w-12 h-12 rounded-xl grid place-items-center border shrink-0 ${
+                    teamsData?.is_round2_active
+                      ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                      : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
+                  }`}
+                >
+                  <Zap size={22} className={teamsData?.is_round2_active ? 'animate-pulse' : ''} />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-regal text-base sm:text-lg font-bold text-gray-50 tracking-wider">
+                      ROUND 2: TACTICAL SYNDICATE SYSTEM CONTROL
+                    </h3>
+                    <span
+                      className={`text-[10px] px-2.5 py-0.5 rounded font-bold uppercase tracking-wider border ${
+                        teamsData?.is_round2_active
+                          ? 'bg-emerald-500/20 border-emerald-500/60 text-emerald-300 animate-pulse'
+                          : 'bg-gray-800 border-gray-700 text-gray-400'
+                      }`}
+                    >
+                      {teamsData?.is_round2_active ? 'ROUND 2 ACTIVE // TEAMS UNLOCKED' : 'ROUND 2 STANDBY // TEAMS CONCEALED'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 leading-relaxed max-w-2xl">
+                    {teamsData?.is_round2_active
+                      ? 'Round 2 has commenced! All players can now view their assigned squad partner, combined scores, and secret directives.'
+                      : 'Round 2 details are currently concealed from all players. Click "Begin Round 2" to unlock team dossiers across all participant screens.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
+                <button
+                  onClick={handleToggleRound2Active}
+                  disabled={togglingRound2}
+                  className={`w-full md:w-auto cyber-btn text-xs px-7 py-3.5 flex items-center justify-center gap-2 font-bold tracking-wider transition-all ${
+                    teamsData?.is_round2_active
+                      ? 'bg-amber-950/60 border-amber-500/60 text-amber-300 hover:bg-red-950/50 hover:border-red-500/60 hover:text-red-300'
+                      : 'cyber-btn-cyan shadow-[0_0_25px_rgba(16,185,129,0.4)]'
+                  }`}
+                >
+                  {togglingRound2 ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin text-doom-steel" />
+                      <span>UPDATING PROTOCOL...</span>
+                    </>
+                  ) : teamsData?.is_round2_active ? (
+                    <>
+                      <EyeOff size={15} />
+                      <span>PAUSE ROUND 2</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap size={15} className="text-cyan-400 fill-cyan-400/30" />
+                      <span>BEGIN ROUND 2</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
 
             {/* Round 2 Team Stats KPI Bar */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

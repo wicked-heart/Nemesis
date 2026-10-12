@@ -38,6 +38,7 @@ export interface PlayerTeamMember {
 }
 
 export interface PlayerTeamInfo {
+  is_round2_active?: boolean;
   is_assigned: boolean;
   team_id?: string;
   team_number?: number;
@@ -218,6 +219,8 @@ export interface Round2TeamItem {
 }
 
 export interface Round2TeamsData {
+  is_round2_active?: boolean;
+  round2_started_at?: string | null;
   teams: Round2TeamItem[];
   unassigned_players: Round2PlayerSummary[];
   stats: {

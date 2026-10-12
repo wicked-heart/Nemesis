@@ -40,6 +40,9 @@ export default function Completion({ onExit }: CompletionProps) {
 
   const handleExit = () => {
     sounds.playClick();
+    try {
+      localStorage.removeItem('nemesis_revealed_domain');
+    } catch {}
     clearSessionToken();
     onExit();
   };
@@ -141,7 +144,7 @@ export default function Completion({ onExit }: CompletionProps) {
             ASSIGNED HIDDEN DOMAIN
           </div>
           <div className="font-regal text-3xl sm:text-4xl text-gray-50 font-bold tracking-wide">
-            {session.assigned_domain_name || 'UNRESOLVED DOMAIN'}
+            {session.assigned_domain_name || (typeof window !== 'undefined' ? localStorage.getItem('nemesis_revealed_domain') : null) || 'UNRESOLVED DOMAIN'}
           </div>
         </div>
 

@@ -191,6 +191,32 @@ export default function Round2TeamCard({
     );
   };
 
+  // State 0: Round 2 has not been authorized yet by Admin
+  if (!team || team.is_round2_active === false) {
+    return (
+      <div className={`space-y-3 ${className}`}>
+        <div className="terminal-panel p-5 sm:p-6 text-center space-y-4 relative overflow-hidden animate-fade-in border border-doom-line bg-black/60">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-11 h-11 rounded-full grid place-items-center border border-doom-line bg-white/[0.03] text-gray-500">
+              <Lock size={18} />
+            </div>
+            <span className="font-mono text-[11px] font-bold tracking-[0.18em] text-gray-400">
+              ROUND 2 // TACTICAL SYNDICATE [LOCKED]
+            </span>
+          </div>
+
+          <p className="text-gray-400 text-[13px] max-w-lg mx-auto leading-relaxed">
+            Round 2 has not commenced. Team dossiers and tactical directives remain strictly sealed until authorized by the Sovereign Admin.
+          </p>
+
+          <div className="glass px-4 py-2 font-mono text-[10px] text-gray-500 max-w-xs mx-auto">
+            <span>STATUS: AWAITING SOVEREIGN AUTHORIZATION</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // State A: Player is assigned to a Round 2 Team
   if (team && team.is_assigned) {
     const isP1 = team.is_player1 ?? true;

@@ -940,6 +940,8 @@ BEGIN
       'started_at', v_session.started_at,
       'completed_at', v_session.completed_at,
       'time_taken_seconds', v_elapsed_seconds,
+      'elapsed_seconds', v_elapsed_seconds,
+      'time_remaining_seconds', GREATEST(0, 900 - v_elapsed_seconds),
       'assigned_domain_name', v_domain.name,
       'unlocked_clues', v_clues,
       'guesses', v_guesses
@@ -956,6 +958,8 @@ BEGIN
       'started_at', v_session.started_at,
       'completed_at', v_session.completed_at,
       'time_taken_seconds', v_elapsed_seconds,
+      'elapsed_seconds', v_elapsed_seconds,
+      'time_remaining_seconds', GREATEST(0, 900 - v_elapsed_seconds),
       'unlocked_clues', v_clues,
       'guesses', v_guesses
     );

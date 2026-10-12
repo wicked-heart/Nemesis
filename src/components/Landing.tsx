@@ -5,7 +5,6 @@ import {
   Eye,
   ChevronRight,
   Cpu,
-  Target,
   AlertTriangle,
   Award,
   Sparkles,
@@ -153,7 +152,7 @@ export default function Landing({ onEnter }: LandingProps) {
         </Depth>
 
         {/* --- Key Pillars of Nemesis Round 1 --- */}
-        <section className="px-4 sm:px-6 py-14 sm:py-20">
+        <section className="px-4 sm:px-6 pt-14 pb-20 sm:pt-20 sm:pb-28">
           <div className="max-w-5xl mx-auto w-full">
             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
               {/* Card 1 */}
@@ -182,46 +181,6 @@ export default function Landing({ onEnter }: LandingProps) {
                 </p>
               </Reveal>
             </div>
-          </div>
-        </section>
-
-        {/* --- 10 Domains Overview --- */}
-        <section className="px-4 sm:px-6 pb-16 sm:pb-24">
-          <div className="max-w-5xl mx-auto w-full">
-            <Reveal className="w-full terminal-panel energy p-5 sm:p-6 text-left">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-doom-line pb-3.5 mb-4">
-                <div className="flex items-center gap-2 text-xs font-mono">
-                  <Target size={14} className="text-doom-green" />
-                  <span className="text-doom-steel font-bold tracking-[0.18em] uppercase">
-                    THE 10 CANDIDATE DOMAINS
-                  </span>
-                </div>
-                <span className="chip text-gray-400">1 DOMAIN PER PARTICIPANT</span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 font-mono text-xs">
-                {[
-                  'Cybersecurity',
-                  'Healthcare',
-                  'Space Exploration',
-                  'Finance & Banking',
-                  'Education & Learning',
-                  'Sports',
-                  'Agriculture & Farming',
-                  'Transportation & Travel',
-                  'Crime Investigation & Forensics',
-                  'Artificial Intelligence',
-                ].map((domain, i) => (
-                  <div
-                    key={domain}
-                    className="domain-tile px-2.5 py-3 rounded-xl bg-white/[0.025] border border-doom-line text-gray-200 text-center flex flex-col justify-center items-center gap-1 hover:border-doom-green/45 transition-colors"
-                  >
-                    <span className="text-[10px] text-doom-green font-bold">#{String(i + 1).padStart(2, '0')}</span>
-                    <span className="font-semibold text-[11.5px] leading-snug">{domain}</span>
-                  </div>
-                ))}
-              </div>
-            </Reveal>
           </div>
         </section>
       </main>

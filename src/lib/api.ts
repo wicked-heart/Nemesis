@@ -272,3 +272,21 @@ export async function getBroadcastMessage(): Promise<Round2BroadcastMessage> {
   }
   return result;
 }
+
+export async function setRound2Active(
+  password: string,
+  active: boolean = true
+): Promise<{ success?: boolean; is_round2_active?: boolean; error?: string }> {
+  const { data, error } = await supabase.rpc('set_round2_active', {
+    admin_pwd: password,
+    p_active: active,
+  });
+  if (error) throw new Error(error.message);
+  return data as { success?: boolean; is_round2_active?: boolean; error?: string };
+}
+
+export async function getRound2Status(): Promise<{ is_round2_active: boolean; started_at?: string | null }> {
+  const { data, error } = await supabase.rpc('get_round2_status');
+  if (error) throw new Error(error.message);
+  return data as { is_round2_active: boolean; started_at?: string | null };
+}
