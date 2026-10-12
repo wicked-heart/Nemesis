@@ -379,6 +379,66 @@ All database procedures reside in `public` schema and run with `SECURITY DEFINER
 - **`Round2TeamCard.tsx`:** Tactical syndicate dossier card featuring score aggregation, teammate badges, and shoulder-surf-proof stealth directive decryption.
 - **`directiveRenderer.tsx`:** Custom markdown parser transforming the raw *Operation Doom* text into styled tactical blocks without third-party markdown dependencies.
 
+### UI Redesign "Emerald Sovereign" (2026-10, branch `ui-redesign`)
+The whole UI was redesigned **without touching game logic** (`src/lib`, `src/hooks`, `App.tsx`,
+`supabase/` are unchanged; screens only changed markup/styles). Read `UI_PLAN.md` (plan + progress log)
+before changing the UI, and keep the rules: **UI only, never change handlers, state, API calls or conditions**,
+and **never change or add visible text**: every screen shows exactly the original wording (the owner asked
+for this; extra sections and taglines were removed again in V2). Even colour-only edits in `src/lib` are off
+limits. Before saying a behaviour bug is "in the UI", diff the logic against `main` (`git diff main -- src/lib
+src/hooks src/App.tsx`) and reproduce it with the friend's original side by side.
+- **Wrong guess → lock screen:** the client only shows the lock screen when the server returns
+  `player_status = 'PENALTY_PENDING'` (set by `submit_guess`, see `supabase/migrations/20261011085000_*`). If
+  a wrong guess shows "Screen locked. Await admin unlock…" but no lock screen and jumps to the next clue, the
+  **live database's `submit_guess` is not locking** (the client's auto-advance runs for NORMAL players): check
+  it in the Supabase SQL editor, not the UI. (2026-10-12: the deployed site is byte-identical to a build of
+  `main` and locks correctly; the reported "bug" came from the scratch fake-data preview, whose mock
+  never locked. Test real behaviour with `npm run dev` → http://localhost:5173, started **inside the
+  Nemesis folder**: Tailwind finds its config from the folder it is started in, and started elsewhere the
+  page has no styles, so the lock screen sits at the bottom of the page instead of covering it.)
+- **Fake-data preview:** Claude's scratch preview (localhost:5199) shows a red "FAKE PREVIEW" label. Never
+  judge game behaviour there; it is only for looks.
+- **Palette:** green is the only accent; amber = warning, red = penalty. Tokens in `tailwind.config.js`
+  (`doom-*`, and the default `emerald`/`cyan`/`gray`/`zinc` palettes are remapped there).
+- **3D Doom (full model):** "Doctor Doom's Mask" by Nicolas_Laube (Sketchfab, **CC BY 4.0** — keep the
+  credit line in the Landing footer): mask, head, green hood/cloak, copper clasps. The owner chose the full
+  model. `public/models/doom-full.glb` (4.1 MB, textures as JPEG); see `DOOM_MODEL.md`. While it loads (and on
+  devices without 3D) a still image of the same model shows (`DoomPoster.tsx`, a light scan sweeps over it);
+  small icons use `DoomFace.tsx`. The old cartoon SVG `DoomMask` is no longer shown anywhere (owner: "childish").
+- **One 3D scene and one background for the whole app** (speed): `doom3d/stage.ts` builds the 3D scene once
+  and moves its canvas into whichever `Doom3D` box is on screen (the newest claim wins, e.g. the lock screen
+  over the game); `backdrop/Backdrop.tsx` does the same for the dot background (`<Backdrop />` behind the
+  page, `<BackdropSlot />` inside the lock screen as a red "corrupted signal"). Building them per page froze
+  the Landing → Entry change for ~0.5 s (frames of 180/97/188 ms); now the slowest frame is ~14 ms. Never
+  give a page its own WebGL canvas again.
+- **Load test (2026-10-12, real database, owner-approved):** 60 fake players (LOADTEST01..60) registered,
+  began, revealed a clue, guessed wrong (all 60 locked) and polled like real screens for 2 minutes: 4,429
+  requests at 36/s, **0 errors**, median 45 ms, p95 under 90 ms, slowest 382 ms. Note: `get_game_state` does
+  not return the session `id`, so the lock screen's realtime channel never opens; unlocks arrive through the
+  2.5 s polling (friend's logic, unchanged). Delete test players with
+  `delete from public.participants where participant_id like 'LOADTEST%';`
+- **Admin password:** stored only as a bcrypt hash in `admin_config`. The plain text was removed from
+  `supabase/*.sql` (placeholder `PUT-THE-NEW-PASSWORD-HERE`); the owner chose to keep the current password,
+  which is still visible in the public repo's git history (first commit). Never write it into the repo. `doom3d/`: `maskModel.ts` (centre, scale, find the eyes),
+  `DoomScene.tsx` (dark studio, eye glow green / red when judging, rises in, floats, turns to the cursor),
+  `Doom3D.tsx` (SVG fallback while loading or if 3D fails, lazy loading, pauses off screen), `DoomHero.tsx`
+  (Landing; red eyes while the Rules window is open). On the game screen it sits above the Round 2 card
+  (laptops) / at the top (phones). Rejected by the owner: the code-built Doom figure, the scroll story, and
+  a code-built mask ("childish").
+  Gotcha: `PMREMGenerator.fromScene` leaves the studio's black as the clear colour — reset it to
+  transparent, and keep the glow sprite inside the canvas, or a dark box shows round the mask.
+- **Background:** `backdrop/Backdrop.tsx` is a port of the AI&DS Club site's moving dot background
+  (`flow-background.tsx` there: two WebGL passes, flowing noise, cursor glow), dark graphite with a hint of
+  green. `stage` on the Landing (clear middle for the mask), `calm` on the game screen and admin. It is a
+  fixed canvas at `z-index: -1`, so **`body` must stay transparent** (the page colour is on `html`).
+  Rejected: the earlier busy 3D background (smoke, sigil rings, node network, embers, hex floor).
+- **Motion:** `motion/Reveal.tsx` (sections fade up on scroll), loading screen in `index.html` (only on slow loads).
+- **Speed:** home and game screen run at 144 fps (screen max) on Intel UHD integrated graphics.
+  No `backdrop-filter: blur` anywhere (very slow over moving WebGL); if a bar needs to hide what
+  scrolls under it, give it a solid background. Tailwind 3 only has opacity steps of 5 (`/90`, `/95`):
+  `bg-x/92` silently produces nothing.
+- **Gotcha:** don't put `overflow-x: hidden` on html/body: it breaks `position: sticky` (use `clip`).
+
 ---
 
 ## 8. Directory Structure

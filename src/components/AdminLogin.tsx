@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Loader2, ArrowLeft, ShieldCheck, Lock } from 'lucide-react';
-import DoomMask from './DoomMask';
-import ArcaneCanvas from './ArcaneCanvas';
+import Backdrop from './backdrop/Backdrop';
+import Doom3D from './doom3d/Doom3D';
 import { sounds } from '@/lib/sound';
 
 interface AdminLoginProps {
@@ -29,7 +29,7 @@ export default function AdminLogin({ onSuccess, onBack }: AdminLoginProps) {
 
   return (
     <div className="min-h-screen cyber-grid scanlines flex flex-col items-center justify-center px-4 py-12 relative animate-fade-in">
-      <ArcaneCanvas />
+      <Backdrop />
 
       <div className="max-w-md w-full relative z-10">
         <button
@@ -37,44 +37,41 @@ export default function AdminLogin({ onSuccess, onBack }: AdminLoginProps) {
             sounds.playClick();
             onBack();
           }}
-          className="flex items-center gap-2 text-xs text-gray-500 hover:text-[#f59e0b] transition-colors mb-6 font-mono"
+          className="flex items-center gap-2 text-xs text-gray-500 hover:text-doom-glow transition-colors mb-6 font-mono tracking-wide"
         >
           <ArrowLeft size={14} /> Back to Nemesis Gate
         </button>
 
-        <div className="terminal-panel p-6 md:p-8 border-t-2 border-t-[#f59e0b] shadow-[0_0_50px_rgba(0,0,0,0.85)]">
-          <div className="mb-6 text-center">
+        <div className="terminal-panel p-6 md:p-8">
+          <div className="mb-7 text-center">
             <div className="flex justify-center mb-3">
-              <DoomMask size={64} glow={true} withRunes={true} />
+              <Doom3D mode="mask" className="relative w-32 h-32" />
             </div>
-            <h2 className="font-regal text-2xl text-[#f59e0b] font-bold tracking-wider mb-1">
+            <span className="eyebrow !tracking-[0.12em]">// NEMESIS ROUND 1: SURVEILLANCE &amp; CONTROLS</span>
+            <h2 className="display text-[1.7rem] sm:text-[2rem] mt-4">
               ADMIN SUPERVISORY CONSOLE
             </h2>
-            <div className="h-0.5 w-32 mx-auto bg-gradient-to-r from-transparent via-[#f59e0b] to-transparent" />
-            <p className="text-xs text-gray-400 mt-2 font-mono">
-              // NEMESIS ROUND 1: SURVEILLANCE &amp; CONTROLS
-            </p>
+            <div className="hairline w-32 mx-auto mt-4" />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 font-mono">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-xs text-[#f59e0b] mb-2 tracking-wider font-semibold">
-                ADMINISTRATIVE ACCESS CIPHER
+              <label className="flex items-center gap-1.5 font-mono text-[11px] text-gray-400 mb-2 tracking-[0.18em]">
+                <ShieldCheck size={12} className="text-doom-green" /> ADMINISTRATIVE ACCESS CIPHER
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter admin password"
-                className="cyber-input"
-                style={{ borderColor: 'rgba(245, 158, 11, 0.4)', color: '#fde047' }}
+                className="cyber-input py-3.5"
                 disabled={loading}
                 autoFocus
               />
             </div>
 
             {error && (
-              <div className="text-xs text-red-400 bg-red-950/40 border border-red-800/50 p-2.5 rounded animate-shake">
+              <div className="text-xs text-red-300 bg-red-950/40 border border-red-500/40 px-4 py-3 rounded-xl animate-shake">
                 {error}
               </div>
             )}
@@ -82,7 +79,7 @@ export default function AdminLogin({ onSuccess, onBack }: AdminLoginProps) {
             <button
               type="submit"
               disabled={loading}
-              className="cyber-btn cyber-btn-cyan w-full text-sm mt-2 flex items-center justify-center gap-2"
+              className="cyber-btn w-full text-sm py-3.5 mt-2 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>

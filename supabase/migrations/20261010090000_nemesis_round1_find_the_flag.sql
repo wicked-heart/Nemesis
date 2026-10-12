@@ -134,10 +134,11 @@ CREATE POLICY "deny_admin_config_access" ON public.admin_config FOR ALL TO anon,
 -- 3. SEED ADMIN CONFIG
 -- ====================================================================
 
--- Set Admin Password to: cres.nemesis@2k26
+-- Admin password: stored only in the database, encrypted with bcrypt (one-way). It is not written
+-- here because this repo is public. Set or change it with supabase/set_admin_password.sql.
 DELETE FROM public.admin_config;
 INSERT INTO public.admin_config (password_hash) 
-VALUES (extensions.crypt('cres.nemesis@2k26', extensions.gen_salt('bf')));
+VALUES (extensions.crypt('PUT-THE-NEW-PASSWORD-HERE', extensions.gen_salt('bf')));
 
 -- ====================================================================
 -- 4. SEED ALL 10 DOMAINS AND ALL 150 EXACT CLUES

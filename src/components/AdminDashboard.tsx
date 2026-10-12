@@ -52,8 +52,8 @@ import type {
 } from '@/lib/types';
 import { DEFAULT_SECRET_DIRECTIVE } from '@/lib/types';
 import { renderClassifiedContent } from '@/lib/directiveRenderer';
-import DoomMask from './DoomMask';
-import ArcaneCanvas from './ArcaneCanvas';
+import DoomFace from './DoomFace';
+import Backdrop from './backdrop/Backdrop';
 import { sounds } from '@/lib/sound';
 
 interface AdminDashboardProps {
@@ -402,28 +402,30 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
   };
 
   return (
-    <div className="min-h-screen cyber-grid scanlines text-gray-200 flex flex-col justify-between selection:bg-[#10b981] selection:text-black">
-      <ArcaneCanvas />
+    <div className="min-h-screen cyber-grid scanlines text-gray-200 flex flex-col justify-between selection:bg-doom-green selection:text-black">
+      <Backdrop calm />
 
       {/* --- Top Admin Command Bar --- */}
-      <header className="relative z-20 border-b border-gray-800/80 bg-[#020704]/90 backdrop-blur-md px-4 py-2.5">
+      <header className="hud-header sticky top-0 z-30 border-b border-doom-line bg-doom-void/95 px-4 sm:px-6 py-3">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-          <div className="flex items-center gap-3">
-            <DoomMask size={24} glow={true} withRunes={false} />
-            <span className="text-[#f59e0b] font-bold tracking-widest uppercase">
-              NEMESIS // ADMIN SUPERVISORY CONSOLE
-            </span>
-            <span className="text-gray-700">|</span>
-            <span className="text-[#10b981]">ROUND 1: FIND THE FLAG</span>
+          <div className="flex items-center gap-3 min-w-0">
+            <DoomFace size={30} />
+            <div className="min-w-0 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+              <span className="font-regal text-sm sm:text-base text-gray-50 font-bold tracking-[0.08em] uppercase truncate">
+                NEMESIS // ADMIN SUPERVISORY CONSOLE
+              </span>
+              <span className="text-gray-700 hidden sm:inline">|</span>
+              <span className="text-[10px] tracking-[0.2em] text-doom-green">ROUND 1: FIND THE FLAG</span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded border text-[11px] transition-colors ${
+              className={`chip transition-colors ${
                 autoRefresh
-                  ? 'border-[#10b981]/50 text-[#10b981] bg-black/40'
-                  : 'border-gray-800 text-gray-500 bg-black/20'
+                  ? 'border-doom-green/50 text-doom-glow bg-doom-green/10'
+                  : 'text-gray-500'
               }`}
             >
               <RefreshCw size={11} className={autoRefresh ? 'animate-spin' : ''} />
@@ -435,14 +437,14 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                 sounds.playClick();
                 loadDashboard();
               }}
-              className="cyber-btn cyber-btn-cyan text-[11px] px-2.5 py-1 flex items-center gap-1"
+              className="cyber-btn cyber-btn-cyan text-[11px] px-3.5 py-1.5 flex items-center gap-1.5"
             >
               <RefreshCw size={11} /> Refresh
             </button>
 
             <button
               onClick={onLogout}
-              className="flex items-center gap-1 text-gray-500 hover:text-red-400 transition-colors text-[11px]"
+              className="chip text-gray-400 hover:text-red-400 hover:border-red-500/40 transition-colors"
             >
               <LogOut size={12} /> Exit
             </button>
@@ -451,48 +453,48 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
       </header>
 
       {/* --- Main Admin Content --- */}
-      <main className="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 py-6 space-y-6">
+      <main className="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-6">
         {/* KPI Stat Cards */}
         {data?.stats && (
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 font-mono">
-            <div className="doom-feature-card p-4 rounded text-left">
-              <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
+            <div className="doom-feature-card p-5 text-left">
+              <div className="flex items-center justify-between text-gray-500 text-[10px] tracking-[0.16em] mb-3">
                 <span>TOTAL PLAYERS</span>
-                <Users size={14} className="text-[#10b981]" />
+                <Users size={14} className="text-doom-green" />
               </div>
-              <div className="text-2xl font-bold text-gray-100">{data.stats.total_players}</div>
+              <div className="text-3xl font-bold text-gray-50">{data.stats.total_players}</div>
             </div>
 
-            <div className="doom-feature-card p-4 rounded text-left">
-              <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
+            <div className="doom-feature-card p-5 text-left">
+              <div className="flex items-center justify-between text-gray-500 text-[10px] tracking-[0.16em] mb-3">
                 <span>ACTIVE ROUNDS</span>
                 <Activity size={14} className="text-emerald-400" />
               </div>
-              <div className="text-2xl font-bold text-[#10b981]">{data.stats.active_players}</div>
+              <div className="text-3xl font-bold text-doom-glow">{data.stats.active_players}</div>
             </div>
 
-            <div className="doom-feature-card p-4 rounded text-left">
-              <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
+            <div className="doom-feature-card p-5 text-left">
+              <div className="flex items-center justify-between text-gray-500 text-[10px] tracking-[0.16em] mb-3">
                 <span>COMPLETED</span>
                 <CheckCircle2 size={14} className="text-blue-400" />
               </div>
-              <div className="text-2xl font-bold text-blue-400">{data.stats.completed_players}</div>
+              <div className="text-3xl font-bold text-blue-300">{data.stats.completed_players}</div>
             </div>
 
-            <div className="doom-feature-card p-4 rounded text-left">
-              <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
+            <div className="doom-feature-card p-5 text-left">
+              <div className="flex items-center justify-between text-gray-500 text-[10px] tracking-[0.16em] mb-3">
                 <span>EXHAUSTED / FAILED</span>
                 <AlertTriangle size={14} className="text-red-400" />
               </div>
-              <div className="text-2xl font-bold text-red-400">{data.stats.failed_players}</div>
+              <div className="text-3xl font-bold text-red-400">{data.stats.failed_players}</div>
             </div>
 
-            <div className="doom-feature-card p-4 rounded text-left border-[#f59e0b]/40">
-              <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
+            <div className="doom-feature-card p-5 text-left !border-amber-500/35 !bg-amber-500/[0.04]">
+              <div className="flex items-center justify-between text-gray-500 text-[10px] tracking-[0.16em] mb-3">
                 <span>PENALTY PENDING</span>
-                <ShieldAlert size={14} className="text-[#f59e0b]" />
+                <ShieldAlert size={14} className="text-amber-500" />
               </div>
-              <div className="text-2xl font-bold text-[#f59e0b]">
+              <div className="text-3xl font-bold text-amber-500">
                 {data.stats.penalty_pending_count}
               </div>
             </div>
@@ -500,16 +502,16 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
         )}
 
         {/* Section Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-gray-800 pb-3 font-mono text-xs">
+        <div className="flex flex-wrap items-center gap-2 font-mono text-xs">
           <button
             onClick={() => {
               sounds.playClick();
               setActiveTab('overview');
             }}
-            className={`px-4 py-2 rounded flex items-center gap-2 font-bold tracking-wider transition-all ${
+            className={`px-4 py-2 rounded-full flex items-center gap-2 font-bold tracking-wider transition-all ${
               activeTab === 'overview'
-                ? 'bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/50 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
-                : 'text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-800 bg-black/30'
+                ? 'bg-doom-green/15 text-doom-glow border border-doom-green/45 shadow-[0_0_20px_-6px_rgba(34,197,94,0.5)]'
+                : 'text-gray-400 hover:text-gray-200 border border-doom-line hover:border-gray-700 bg-white/[0.02]'
             }`}
           >
             <Users size={14} />
@@ -521,13 +523,13 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
               sounds.playClick();
               setActiveTab('scoreboard');
             }}
-            className={`px-4 py-2 rounded flex items-center gap-2 font-bold tracking-wider transition-all ${
+            className={`px-4 py-2 rounded-full flex items-center gap-2 font-bold tracking-wider transition-all ${
               activeTab === 'scoreboard'
-                ? 'bg-[#f59e0b]/20 text-[#f59e0b] border border-[#f59e0b]/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
-                : 'text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-800 bg-black/30'
+                ? 'bg-white/[0.06] text-gray-50 border border-doom-steel/40 shadow-[0_0_20px_-6px_rgba(201,209,214,0.35)]'
+                : 'text-gray-400 hover:text-gray-200 border border-doom-line hover:border-gray-700 bg-white/[0.02]'
             }`}
           >
-            <Trophy size={14} className="text-[#f59e0b]" />
+            <Trophy size={14} className="text-doom-steel" />
             <span>SCORE SECTION (NAME, RRN &amp; SCORES) ({scoreboardList.length})</span>
           </button>
 
@@ -536,10 +538,10 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
               sounds.playClick();
               setActiveTab('teams');
             }}
-            className={`px-4 py-2 rounded flex items-center gap-2 font-bold tracking-wider transition-all ${
+            className={`px-4 py-2 rounded-full flex items-center gap-2 font-bold tracking-wider transition-all ${
               activeTab === 'teams'
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
-                : 'text-gray-400 hover:text-gray-200 border border-transparent hover:border-gray-800 bg-black/30'
+                ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/45 shadow-[0_0_20px_-6px_rgba(16,185,129,0.5)]'
+                : 'text-gray-400 hover:text-gray-200 border border-doom-line hover:border-gray-700 bg-white/[0.02]'
             }`}
           >
             <Users2 size={14} className="text-cyan-400" />
@@ -571,7 +573,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                   <select
                     value={roundFilter}
                     onChange={(e) => setRoundFilter(e.target.value as any)}
-                    className="bg-black/60 border border-gray-800 text-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-[#10b981]"
+                    className="bg-black/60 border border-gray-800 text-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-doom-green"
                   >
                     <option value="ALL">All Rounds</option>
                     <option value="NOT_STARTED">Not Started</option>
@@ -586,7 +588,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                   <select
                     value={playerFilter}
                     onChange={(e) => setPlayerFilter(e.target.value as any)}
-                    className="bg-black/60 border border-gray-800 text-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-[#10b981]"
+                    className="bg-black/60 border border-gray-800 text-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:border-doom-green"
                   >
                     <option value="ALL">All Players</option>
                     <option value="NORMAL">Normal</option>
@@ -601,7 +603,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
               <div className="overflow-x-auto">
                 <table className="w-full text-left font-mono text-xs">
                   <thead>
-                    <tr className="border-b border-gray-800 bg-[#020704]/90 text-gray-400 uppercase text-[11px] tracking-wider">
+                    <tr className="border-b border-doom-line bg-white/[0.02] text-gray-500 uppercase text-[10px] tracking-[0.16em]">
                       <th className="py-3 px-3">Participant / RRN</th>
                       <th className="py-3 px-3">Assigned Domain</th>
                       <th className="py-3 px-2 text-center">Round Status</th>
@@ -617,7 +619,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                     {loading ? (
                       <tr>
                         <td colSpan={9} className="py-12 text-center">
-                          <Loader2 size={24} className="animate-spin text-[#10b981] mx-auto mb-2" />
+                          <Loader2 size={24} className="animate-spin text-doom-green mx-auto mb-2" />
                           <span className="text-gray-500">Retrieving participant records...</span>
                         </td>
                       </tr>
@@ -645,7 +647,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
 
                             {/* Assigned Domain */}
                             <td className="py-3 px-3">
-                              <span className="px-2 py-0.5 rounded bg-black/50 border border-[#f59e0b]/30 text-[#f59e0b] font-semibold text-[11px]">
+                              <span className="px-2 py-0.5 rounded bg-black/50 border border-doom-steel/30 text-doom-steel font-semibold text-[11px]">
                                 {p.assigned_domain_name}
                               </span>
                             </td>
@@ -655,7 +657,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                               <span
                                 className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                                   p.round_status === 'ACTIVE'
-                                    ? 'bg-emerald-950/70 text-[#10b981] border border-emerald-500/40'
+                                    ? 'bg-emerald-950/70 text-doom-green border border-emerald-500/40'
                                     : p.round_status === 'COMPLETED'
                                     ? 'bg-blue-950/70 text-blue-400 border border-blue-500/40'
                                     : p.round_status === 'FAILED'
@@ -672,7 +674,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                               <span
                                 className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1 ${
                                   isPending
-                                    ? 'bg-amber-950/80 text-[#f59e0b] border border-amber-500/50 animate-pulse'
+                                    ? 'bg-amber-950/80 text-amber-500 border border-amber-500/50 animate-pulse'
                                     : 'bg-emerald-950/40 text-emerald-400 border border-emerald-500/30'
                                 }`}
                               >
@@ -699,7 +701,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
 
                             {/* Score */}
                             <td className="py-3 px-2 text-center">
-                              <span className="font-bold text-[#f59e0b]">{p.score}</span>
+                              <span className="font-bold text-doom-glow">{p.score}</span>
                             </td>
 
                             {/* Started */}
@@ -714,7 +716,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                                   <button
                                     onClick={() => handleResolvePenalty(p.session_id)}
                                     disabled={resolvingId === p.session_id}
-                                    className="px-2 py-1 rounded bg-amber-500/10 border border-amber-500/50 text-[#f59e0b] hover:bg-amber-500/20 text-[10px] font-bold transition-colors flex items-center gap-1"
+                                    className="px-3 py-1.5 rounded-full bg-amber-500 border border-amber-300/60 text-black hover:bg-amber-400 text-[10px] font-bold transition-colors flex items-center gap-1.5 shadow-[0_0_18px_-4px_rgba(245,158,11,0.7)] disabled:opacity-60"
                                     title={
                                       p.current_clue < 15
                                         ? `Unlock player and automatically advance to Clue ${p.current_clue + 1}`
@@ -736,7 +738,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
 
                                 <button
                                   onClick={() => handleOpenDetail(p.session_id)}
-                                  className="px-2 py-1 rounded bg-black/60 border border-gray-700 text-gray-300 hover:border-[#10b981] hover:text-[#10b981] text-[10px] transition-colors flex items-center gap-1"
+                                  className="px-3 py-1.5 rounded-full bg-white/[0.03] border border-gray-700 text-gray-300 hover:border-doom-green hover:text-doom-glow text-[10px] transition-colors flex items-center gap-1.5"
                                 >
                                   <Eye size={11} /> Inspect
                                 </button>
@@ -772,7 +774,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
 
               <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
                 <div className="text-gray-400 text-xs">
-                  Showing <span className="text-[#f59e0b] font-bold">{scoreboardList.length}</span> ranked participants
+                  Showing <span className="text-doom-steel font-bold">{scoreboardList.length}</span> ranked participants
                 </div>
                 <button
                   onClick={handleExportScores}
@@ -790,7 +792,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-gray-800 bg-[#020704]/90 text-gray-400 uppercase text-[11px] tracking-wider">
+                    <tr className="border-b border-doom-line bg-white/[0.02] text-gray-500 uppercase text-[10px] tracking-[0.16em]">
                       <th className="py-3.5 px-4 w-24 text-center">Rank</th>
                       <th className="py-3.5 px-6">Name</th>
                       <th className="py-3.5 px-6">Registered Roll Number (RRN)</th>
@@ -802,7 +804,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                     {loading ? (
                       <tr>
                         <td colSpan={5} className="py-12 text-center">
-                          <Loader2 size={24} className="animate-spin text-[#10b981] mx-auto mb-2" />
+                          <Loader2 size={24} className="animate-spin text-doom-green mx-auto mb-2" />
                           <span className="text-gray-500">Compiling scores...</span>
                         </td>
                       </tr>
@@ -835,8 +837,8 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                             {/* Rank */}
                             <td className="py-3.5 px-4 text-center">
                               {isTop1 ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/50 text-[#f59e0b] font-bold text-xs shadow-[0_0_10px_rgba(245,158,11,0.2)]">
-                                  <Trophy size={11} className="text-[#f59e0b]" /> #1
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/50 text-amber-500 font-bold text-xs shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+                                  <Trophy size={11} className="text-amber-500" /> #1
                                 </span>
                               ) : isTop2 ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-400/20 border border-gray-400/50 text-gray-200 font-bold text-xs">
@@ -860,7 +862,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
 
                             {/* Registered Roll Number (RRN) */}
                             <td className="py-3.5 px-6">
-                              <span className="px-2.5 py-1 rounded bg-black/60 border border-gray-800 text-[#10b981] font-bold text-xs tracking-wider">
+                              <span className="px-2.5 py-1 rounded bg-black/60 border border-gray-800 text-doom-green font-bold text-xs tracking-wider">
                                 {p.participant_id}
                               </span>
                             </td>
@@ -877,7 +879,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                               <span
                                 className={`text-base font-black tracking-wider ${
                                   p.score > 0
-                                    ? 'text-[#10b981] drop-shadow-[0_0_8px_rgba(16,185,129,0.3)]'
+                                    ? 'text-doom-green drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]'
                                     : 'text-gray-500'
                                 }`}
                               >
@@ -903,7 +905,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
               <div
                 className={`p-3.5 rounded border flex items-center justify-between text-xs transition-all ${
                   teamFeedback.type === 'success'
-                    ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                    ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300 shadow-[0_0_15px_rgba(34,197,94,0.15)]'
                     : 'bg-red-950/40 border-red-500/50 text-red-300 shadow-[0_0_15px_rgba(239,68,68,0.15)]'
                 }`}
               >
@@ -959,12 +961,12 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                 <div className="text-[10px] text-gray-500 mt-1">Currently in a team</div>
               </div>
 
-              <div className="doom-feature-card p-4 rounded text-left border-amber-500/40">
+              <div className="doom-feature-card p-4 rounded text-left border-doom-steel/30">
                 <div className="flex items-center justify-between text-gray-400 text-xs mb-1">
                   <span>UNASSIGNED POOL</span>
-                  <UserPlus size={14} className="text-amber-400" />
+                  <UserPlus size={14} className="text-doom-steel" />
                 </div>
-                <div className="text-2xl font-bold text-amber-400">
+                <div className="text-2xl font-bold text-doom-steel">
                   {teamsData?.stats.unassigned_players_count ?? 0}
                 </div>
                 <div className="text-[10px] text-gray-500 mt-1">Awaiting pair pairing</div>
@@ -976,7 +978,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
               {/* LEFT COLUMN: Pairing Dock & Operatives Selection */}
               <div className="lg:col-span-6 space-y-4">
                 {/* 1. Interactive Pairing Dock */}
-                <div className="terminal-panel p-5 border-2 border-cyan-500/40 rounded-lg shadow-[0_0_30px_rgba(6,182,212,0.1)] relative overflow-hidden">
+                <div className="terminal-panel p-5 border-2 border-cyan-500/40 rounded-lg shadow-[0_0_30px_rgba(34,197,94,0.1)] relative overflow-hidden">
                   <div className="absolute top-0 right-0 bg-cyan-500/20 text-cyan-300 text-[10px] px-2.5 py-0.5 rounded-bl font-bold border-b border-l border-cyan-500/30">
                     MANUAL PAIRING TERMINAL
                   </div>
@@ -1005,7 +1007,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                           <div
                             className={`sm:col-span-5 p-3 rounded border transition-all ${
                               p1
-                                ? 'bg-cyan-950/40 border-cyan-500/60 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                                ? 'bg-cyan-950/40 border-cyan-500/60 shadow-[0_0_15px_rgba(34,197,94,0.2)]'
                                 : 'bg-black/40 border-dashed border-gray-700 text-gray-500'
                             }`}
                           >
@@ -1027,8 +1029,8 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                                   {p1.name}
                                 </div>
                                 <div className="flex items-center justify-between text-[10px] mt-1">
-                                  <span className="text-[#10b981] font-mono">{p1.participant_id}</span>
-                                  <span className="text-amber-400 font-bold">R1: {p1.round1_score} pts</span>
+                                  <span className="text-doom-green font-mono">{p1.participant_id}</span>
+                                  <span className="text-doom-glow font-bold">R1: {p1.round1_score} pts</span>
                                 </div>
                               </div>
                             ) : (
@@ -1055,7 +1057,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                           <div
                             className={`sm:col-span-5 p-3 rounded border transition-all ${
                               p2
-                                ? 'bg-cyan-950/40 border-cyan-500/60 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                                ? 'bg-cyan-950/40 border-cyan-500/60 shadow-[0_0_15px_rgba(34,197,94,0.2)]'
                                 : 'bg-black/40 border-dashed border-gray-700 text-gray-500'
                             }`}
                           >
@@ -1077,8 +1079,8 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                                   {p2.name}
                                 </div>
                                 <div className="flex items-center justify-between text-[10px] mt-1">
-                                  <span className="text-[#10b981] font-mono">{p2.participant_id}</span>
-                                  <span className="text-amber-400 font-bold">R1: {p2.round1_score} pts</span>
+                                  <span className="text-doom-green font-mono">{p2.participant_id}</span>
+                                  <span className="text-doom-glow font-bold">R1: {p2.round1_score} pts</span>
                                 </div>
                               </div>
                             ) : (
@@ -1111,7 +1113,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                             <div className="text-[11px] text-gray-400">
                               {p1 && p2 ? (
                                 <span className="text-cyan-300">
-                                  Combined Round 1 Score: <strong className="text-amber-400 font-bold">{combinedScore} PTS</strong>
+                                  Combined Round 1 Score: <strong className="text-doom-glow font-bold">{combinedScore} PTS</strong>
                                 </span>
                               ) : (
                                 <span>{selectedPlayerIds.length}/2 operatives picked</span>
@@ -1133,7 +1135,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                                 disabled={selectedPlayerIds.length !== 2 || creatingTeam}
                                 className={`flex-1 sm:flex-initial cyber-btn text-xs px-4 py-2 flex items-center justify-center gap-2 ${
                                   selectedPlayerIds.length === 2 && !creatingTeam
-                                    ? 'cyber-btn-cyan shadow-[0_0_20px_rgba(6,182,212,0.3)]'
+                                    ? 'cyber-btn-cyan shadow-[0_0_20px_rgba(34,197,94,0.3)]'
                                     : 'opacity-50 cursor-not-allowed bg-gray-900 border-gray-800 text-gray-500'
                                 }`}
                               >
@@ -1159,9 +1161,9 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
 
                 {/* 2. Unassigned Operatives Pool List */}
                 <div className="terminal-panel border border-gray-800 rounded-lg overflow-hidden">
-                  <div className="p-3 bg-[#020704]/90 border-b border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                  <div className="p-3 bg-doom-void/90 border-b border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <UserPlus size={14} className="text-amber-400" />
+                      <UserPlus size={14} className="text-doom-steel" />
                       <span className="font-bold text-xs text-gray-200">
                         AVAILABLE UNASSIGNED OPERATIVES ({teamsData?.unassigned_players.length ?? 0})
                       </span>
@@ -1225,7 +1227,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                             onClick={() => handleTogglePlayerSelection(player.id)}
                             className={`p-2.5 rounded border cursor-pointer transition-all flex items-center justify-between text-xs ${
                               isSelected
-                                ? 'bg-cyan-950/40 border-cyan-500/70 shadow-[0_0_12px_rgba(6,182,212,0.15)] text-gray-100'
+                                ? 'bg-cyan-950/40 border-cyan-500/70 shadow-[0_0_12px_rgba(34,197,94,0.15)] text-gray-100'
                                 : 'bg-black/30 border-gray-800/80 hover:border-gray-700 hover:bg-black/50 text-gray-300'
                             }`}
                           >
@@ -1242,7 +1244,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                                   {player.name}
                                 </div>
                                 <div className="text-[11px] text-gray-500 font-mono">
-                                  RRN: <span className="text-[#10b981]">{player.participant_id}</span>
+                                  RRN: <span className="text-doom-green">{player.participant_id}</span>
                                 </div>
                               </div>
                             </div>
@@ -1250,7 +1252,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                             <div className="flex items-center gap-3">
                               <div className="text-right">
                                 <span className="text-[10px] text-gray-500 block uppercase">Round 1</span>
-                                <span className="font-bold text-amber-400 text-xs">
+                                <span className="font-bold text-doom-glow text-xs">
                                   {player.round1_score} PTS
                                 </span>
                               </div>
@@ -1276,7 +1278,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
               <div className="lg:col-span-6 space-y-4">
                 <div className="terminal-panel border border-gray-800 rounded-lg overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.6)]">
                   {/* Formed Teams Header */}
-                  <div className="p-3.5 bg-[#020704]/90 border-b border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                  <div className="p-3.5 bg-doom-void/90 border-b border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <Users2 size={16} className="text-emerald-400" />
                       <div>
@@ -1373,7 +1375,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                               </div>
 
                               <div className="flex items-center gap-2">
-                                <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold text-[11px]">
+                                <span className="px-2 py-0.5 rounded bg-doom-green/10 border border-doom-green/30 text-doom-glow font-bold text-[11px]">
                                   Combined: {team.combined_round1_score} PTS
                                 </span>
 
@@ -1401,11 +1403,11 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                                   <span className="font-bold text-gray-200 truncate block">
                                     {team.player1.name}
                                   </span>
-                                  <span className="text-[10px] text-[#10b981] font-mono">
+                                  <span className="text-[10px] text-doom-green font-mono">
                                     {team.player1.participant_id}
                                   </span>
                                 </div>
-                                <span className="text-amber-400 font-bold text-xs shrink-0">
+                                <span className="text-doom-glow font-bold text-xs shrink-0">
                                   {team.player1.round1_score} pts
                                 </span>
                               </div>
@@ -1417,11 +1419,11 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                                   <span className="font-bold text-gray-200 truncate block">
                                     {team.player2.name}
                                   </span>
-                                  <span className="text-[10px] text-[#10b981] font-mono">
+                                  <span className="text-[10px] text-doom-green font-mono">
                                     {team.player2.participant_id}
                                   </span>
                                 </div>
-                                <span className="text-amber-400 font-bold text-xs shrink-0">
+                                <span className="text-doom-glow font-bold text-xs shrink-0">
                                   {team.player2.round1_score} pts
                                 </span>
                               </div>
@@ -1444,11 +1446,11 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
             </div>
 
             {/* Bottom Directive Broadcast Control Panel */}
-            <div className="terminal-panel p-5 border-2 border-[#f59e0b]/50 rounded-lg shadow-[0_0_30px_rgba(245,158,11,0.15)] bg-black/70 relative overflow-hidden">
+            <div className="terminal-panel p-5 border-2 border-doom-steel/50 rounded-lg shadow-[0_0_30px_rgba(201,209,214,0.12)] bg-black/70 relative overflow-hidden">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="space-y-2 max-w-3xl">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Megaphone size={16} className="text-[#f59e0b]" />
+                    <Megaphone size={16} className="text-doom-steel" />
                     <span className="font-regal text-sm font-bold text-gray-100 tracking-wider">
                       BROADCAST DECREE // DOOM CHEATER BOUNTY DIRECTIVE
                     </span>
@@ -1463,10 +1465,10 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                     </span>
                   </div>
 
-                  <div className="p-3.5 rounded bg-black/90 border border-amber-500/30 text-xs font-mono leading-relaxed max-h-72 overflow-y-auto">
+                  <div className="p-3.5 rounded bg-black/90 border border-doom-steel/20 text-xs font-mono leading-relaxed max-h-72 overflow-y-auto">
                     <span className="text-gray-500 block text-[10px] uppercase font-bold mb-2 pb-1 border-b border-gray-800 flex items-center justify-between">
                       <span>CLASSIFIED DIRECTIVE PAYLOAD</span>
-                      <span className="text-amber-400">TARGET: PAID AI PLANS (+8 PTS)</span>
+                      <span className="text-doom-glow">TARGET: PAID AI PLANS (+8 PTS)</span>
                     </span>
                     {renderClassifiedContent(
                       !teamsData?.broadcast_message ||
@@ -1488,12 +1490,12 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                     className={`w-full md:w-auto cyber-btn text-xs px-6 py-3 flex items-center justify-center gap-2 font-bold tracking-wider ${
                       teamsData?.broadcast_revealed
                         ? 'bg-amber-950/60 border-amber-500/60 text-amber-300 hover:bg-red-950/40 hover:border-red-500/60 hover:text-red-300'
-                        : 'cyber-btn-cyan shadow-[0_0_20px_rgba(6,182,212,0.3)]'
+                        : 'cyber-btn-cyan shadow-[0_0_20px_rgba(34,197,94,0.3)]'
                     }`}
                   >
                     {broadcasting ? (
                       <>
-                        <Loader2 size={14} className="animate-spin text-[#f59e0b]" />
+                        <Loader2 size={14} className="animate-spin text-doom-steel" />
                         <span>TRANSMITTING DIRECTIVE...</span>
                       </>
                     ) : teamsData?.broadcast_revealed ? (
@@ -1517,18 +1519,18 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
 
       {/* --- Detail Modal --- */}
       {selectedSessionId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-          <div className="terminal-panel max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto border-t-2 border-t-[#f59e0b]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 animate-fade-in">
+          <div className="terminal-panel max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto border-t-2 border-t-doom-steel">
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-gray-800">
               <div className="flex items-center gap-2">
-                <DoomMask size={24} glow={true} withRunes={false} />
-                <h3 className="font-regal text-lg text-[#f59e0b] font-bold tracking-wider">
+                <DoomFace size={24} />
+                <h3 className="font-regal text-lg text-doom-steel font-bold tracking-wider">
                   PARTICIPANT DOSSIER // {detailData?.participant_name || 'LOADING...'}
                 </h3>
               </div>
               <button
                 onClick={handleCloseDetail}
-                className="text-gray-500 hover:text-[#f59e0b] font-mono text-base"
+                className="text-gray-500 hover:text-doom-glow font-mono text-base"
               >
                 [X]
               </button>
@@ -1536,7 +1538,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
 
             {detailLoading || !detailData ? (
               <div className="py-16 text-center">
-                <Loader2 size={28} className="animate-spin text-[#f59e0b] mx-auto mb-2" />
+                <Loader2 size={28} className="animate-spin text-doom-steel mx-auto mb-2" />
                 <p className="text-xs text-gray-400 font-mono">Decrypting participant dossier...</p>
               </div>
             ) : (
@@ -1545,7 +1547,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-black/40 p-3.5 rounded border border-gray-800">
                   <div>
                     <span className="text-gray-500 text-[10px] block">ASSIGNED DOMAIN</span>
-                    <strong className="text-[#f59e0b] text-sm font-bold">
+                    <strong className="text-doom-steel text-sm font-bold">
                       {detailData.assigned_domain_name}
                     </strong>
                   </div>
@@ -1558,7 +1560,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                     <strong
                       className={
                         detailData.player_status === 'PENALTY_PENDING'
-                          ? 'text-[#f59e0b]'
+                          ? 'text-amber-500'
                           : 'text-emerald-400'
                       }
                     >
@@ -1567,7 +1569,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                   </div>
                   <div>
                     <span className="text-gray-500 text-[10px] block">SCORE / CLUE</span>
-                    <strong className="text-[#10b981] text-sm font-bold">
+                    <strong className="text-doom-green text-sm font-bold">
                       {detailData.score} PTS &bull; Clue {detailData.current_clue}/15
                     </strong>
                   </div>
@@ -1576,7 +1578,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                 {/* Resolve Penalty Action in Modal if Pending */}
                 {detailData.player_status === 'PENALTY_PENDING' && (
                   <div className="p-3.5 rounded bg-amber-950/40 border border-amber-500/50 flex flex-col sm:flex-row items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 text-[#f59e0b]">
+                    <div className="flex items-center gap-2 text-amber-500">
                       <AlertTriangle size={16} className="shrink-0" />
                       <span className="text-xs">
                         {detailData.current_clue < 15
@@ -1606,7 +1608,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                 {/* All 15 Clues for this Domain */}
                 <div>
                   <div className="flex items-center justify-between border-b border-gray-800 pb-2 mb-3">
-                    <span className="text-[#10b981] font-bold tracking-wider flex items-center gap-1.5">
+                    <span className="text-doom-green font-bold tracking-wider flex items-center gap-1.5">
                       <Eye size={13} /> ALL 15 CLUES FOR "{detailData.assigned_domain_name}"
                     </span>
                     <span className="text-gray-500 text-[11px]">
@@ -1625,7 +1627,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold text-[#10b981]">
+                          <span className="font-bold text-doom-green">
                             CLUE #{String(c.clue_number).padStart(2, '0')}
                           </span>
                           <span
@@ -1644,7 +1646,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
 
                 {/* Guess History */}
                 <div>
-                  <div className="border-b border-gray-800 pb-2 mb-3 text-[#f59e0b] font-bold tracking-wider">
+                  <div className="border-b border-gray-800 pb-2 mb-3 text-doom-steel font-bold tracking-wider">
                     GUESS ATTEMPTS HISTORY ({detailData.guesses.length})
                   </div>
                   {detailData.guesses.length === 0 ? (
@@ -1695,7 +1697,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                             <span>{pen.penalty_type}</span>
                             <span
                               className={
-                                pen.status === 'PENDING' ? 'text-[#f59e0b]' : 'text-emerald-400'
+                                pen.status === 'PENDING' ? 'text-amber-500' : 'text-emerald-400'
                               }
                             >
                               {pen.status}

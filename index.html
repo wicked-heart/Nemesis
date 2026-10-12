@@ -2,15 +2,37 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#040605" />
     <title>Dr Doom AI Flag Hunt</title>
     <meta property="og:image" content="https://bolt.new/static/og_default.png" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://bolt.new/static/og_default.png" />
+    <style>
+      /* Loading screen: only appears if loading takes longer than 0.7 s (slow network).
+         React replaces it as soon as the app starts, so on a normal connection it is never seen. */
+      html { background: #040605; }
+      body { margin: 0; }
+      #boot { position: fixed; inset: 0; display: grid; place-items: center; background: #040605; opacity: 0; animation: boot-in 0.5s 0.7s forwards; font-family: ui-monospace, monospace; }
+      #boot .orb { position: relative; width: 120px; height: 120px; display: grid; place-items: center; }
+      #boot .ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid rgba(74, 222, 128, 0.14); border-top-color: #4ade80; animation: boot-spin 1.1s linear infinite; }
+      #boot img { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.3), 0 0 36px -6px rgba(34, 197, 94, 0.7); animation: boot-breathe 2.2s ease-in-out infinite; }
+      @keyframes boot-in { to { opacity: 1; } }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+      @keyframes boot-breathe { 50% { opacity: 0.7; } }
+      @media (prefers-reduced-motion: reduce) { #boot .ring, #boot img { animation: none; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot" role="status">
+        <div class="orb">
+          <span class="ring"></span>
+          <img src="/models/doom-face.webp" alt="" width="88" height="88" />
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

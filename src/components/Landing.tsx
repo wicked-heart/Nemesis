@@ -10,8 +10,10 @@ import {
   Award,
   Sparkles,
 } from 'lucide-react';
-import DoomMask from './DoomMask';
-import ArcaneCanvas from './ArcaneCanvas';
+import Backdrop from './backdrop/Backdrop';
+import DoomHero from './doom3d/DoomHero';
+import { Reveal } from './motion/Reveal';
+import Depth from './motion/Depth';
 
 interface LandingProps {
   onEnter: () => void;
@@ -45,31 +47,31 @@ export default function Landing({ onEnter }: LandingProps) {
   };
 
   return (
-    <div className="min-h-screen cyber-grid scanlines relative text-gray-200 flex flex-col justify-between selection:bg-[#10b981] selection:text-black">
-      {/* Interactive Background Particle Matrix */}
-      <ArcaneCanvas />
+    <div className="min-h-screen cyber-grid scanlines relative text-gray-200 flex flex-col justify-between selection:bg-doom-green selection:text-black">
+      {/* Live background: the club site's moving dots, with a clear stage in the middle for the mask */}
+      <Backdrop stage />
 
       {/* --- Top Sovereign Status Bar --- */}
-      <header className="relative z-20 border-b border-gray-800/80 bg-[#020704]/90 backdrop-blur-md px-4 py-2.5">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+      <header className="hud-header sticky top-0 z-40 px-4 sm:px-6 bg-doom-void/85 border-b border-doom-line">
+        <div className="max-w-6xl mx-auto h-16 flex items-center justify-between gap-3 text-xs font-mono">
           {/* Left: Defense Grid Status */}
-          <div className="flex items-center gap-3">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10b981]"></span>
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="flex h-2 w-2 relative shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-doom-green opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-doom-green"></span>
             </span>
-            <span className="text-[#10b981] font-semibold tracking-wider flex items-center gap-1.5">
-              <Cpu size={12} /> NEMESIS PROTOCOL // ROUND 1: FIND THE FLAG
+            <span className="text-doom-glow font-semibold tracking-[0.16em] flex items-center gap-1.5 truncate">
+              <Cpu size={12} className="shrink-0" /> NEMESIS PROTOCOL // ROUND 1: FIND THE FLAG
             </span>
             <span className="text-gray-700 hidden sm:inline">|</span>
-            <span className="text-[#f59e0b] hidden md:inline">SYSTEM INTEGRITY: VERIFIED</span>
+            <span className="text-doom-steel hidden lg:inline tracking-[0.12em]">SYSTEM INTEGRITY: VERIFIED</span>
           </div>
 
           {/* Right: Admin Link */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 shrink-0">
             <a
               href="#/admin"
-              className="flex items-center gap-1 text-gray-500 hover:text-[#f59e0b] transition-colors tracking-widest text-[11px]"
+              className="chip text-gray-400 hover:text-doom-glow hover:border-doom-green/40 transition-colors"
             >
               <Lock size={11} />
               <span>ADMIN_CONSOLE</span>
@@ -78,211 +80,191 @@ export default function Landing({ onEnter }: LandingProps) {
         </div>
       </header>
 
-      {/* --- Main Hero Container --- */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-10 md:py-16 max-w-5xl mx-auto w-full">
-        {/* Centerpiece Mask with Rotating Arcane Rings */}
-        <div className="mb-6 animate-flicker">
-          <DoomMask size={105} glow={true} withRunes={true} />
-        </div>
-
-        {/* Majestic Typography */}
-        <div className="text-center mb-6">
-          <h1 className="font-regal text-5xl sm:text-7xl md:text-8xl font-black text-[#10b981] animate-pulse-glow tracking-[0.08em] mb-3 uppercase">
-            NEMESIS
-          </h1>
-          <div className="h-0.5 w-72 sm:w-96 mx-auto bg-gradient-to-r from-transparent via-[#f59e0b] to-transparent mb-4 shadow-[0_0_10px_#f59e0b]" />
-          <p className="font-title text-base sm:text-xl md:text-2xl text-[#f59e0b] tracking-[0.3em] uppercase font-bold">
-            ROUND 1: FIND THE FLAG
-          </p>
-        </div>
-
-        {/* Rotating Monologue / Decree Box */}
-        <div
-          className="w-full max-w-2xl mx-auto mb-8 p-4 rounded bg-black/60 border border-[#10b981]/30 backdrop-blur-md relative overflow-hidden transition-all cursor-pointer group"
-          onClick={() => {
-            setQuoteIndex((prev) => (prev + 1) % DOOM_QUOTES.length);
-          }}
-          title="Click to cycle quote"
-        >
-          <div className="flex items-center justify-between text-[11px] font-mono text-gray-500 mb-2 border-b border-gray-800 pb-1">
-            <span className="flex items-center gap-1.5 text-[#10b981]">
-              <Sparkles size={12} className="animate-pulse" />
-              INTELLIGENCE BRIEFING // ROUND 1
-            </span>
-            <span className="text-[10px] text-gray-600 group-hover:text-[#f59e0b] transition-colors">
-              CLICK TO CYCLE [ {quoteIndex + 1}/{DOOM_QUOTES.length} ]
-            </span>
+      <main className="relative z-10 flex-1">
+        {/* --- Hero --- */}
+        {/* Depth: the hero's layers drift with the cursor and sink back as you scroll (UI only) */}
+        <Depth className="min-h-[100svh] flex flex-col items-center justify-center px-4 pt-20 pb-10 text-center">
+          {/* Centerpiece: the 3D Doom on a lit stage (a still image of him shows until it is ready, or if 3D can't run) */}
+          <div className="hero-stage depth-2 depth-fade relative w-full flex justify-center">
+            <span aria-hidden className="hero-beam" />
+            <span aria-hidden className="hero-floor" />
+            <DoomHero
+              alert={showRules}
+              className="hero-fade relative w-[min(100%,500px)] h-[38svh] sm:h-[46svh] min-h-[260px]"
+            />
           </div>
-          <p className="font-mono text-sm sm:text-base text-gray-300 italic text-center leading-relaxed px-2">
-            "{DOOM_QUOTES[quoteIndex]}"
-          </p>
-        </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md mb-12">
-          <button
-            onClick={handleEnterClick}
-            className="cyber-btn text-sm sm:text-base w-full flex items-center justify-center gap-2 group"
-          >
-            <span>Enter Round 1</span>
-            <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-          </button>
-
-          <button
-            onClick={handleRulesClick}
-            className="cyber-btn cyber-btn-cyan text-sm sm:text-base w-full flex items-center justify-center gap-2"
-          >
-            <Shield size={16} />
-            <span>Rules &amp; Protocol</span>
-          </button>
-        </div>
-
-        {/* --- Key Pillars of Nemesis Round 1 --- */}
-        <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mb-10 text-left">
-          {/* Card 1 */}
-          <div className="doom-feature-card p-5 rounded">
-            <div className="flex items-center gap-2.5 text-[#10b981] mb-2 font-mono text-sm font-bold">
-              <Eye size={18} />
-              <span className="tracking-wider">15 PROGRESSIVE CLUES</span>
-            </div>
-            <p className="text-xs text-gray-400 font-mono leading-relaxed">
-              Each participant is assigned exactly one hidden domain. Clues evolve sequentially from abstract and challenging to highly identifiable.
+          {/* Majestic Typography */}
+          <div className="depth-1 depth-fade relative z-10 text-center mb-6 -mt-10 sm:-mt-14">
+            <h1 className="wordmark wordmark-in text-[clamp(3.4rem,12vw,8.5rem)] leading-[0.9] uppercase mt-1" style={{ '--d': '0.2s' } as React.CSSProperties}>
+              NEMESIS
+            </h1>
+            <div className="hairline w-64 sm:w-96 mx-auto mt-4 mb-4 rise" style={{ '--d': '0.6s' } as React.CSSProperties} />
+            <p className="font-mono text-sm sm:text-base text-gray-100 tracking-[0.35em] uppercase rise [text-shadow:0_2px_14px_rgba(0,0,0,0.95)]" style={{ '--d': '0.7s' } as React.CSSProperties}>
+              ROUND 1: FIND THE FLAG
             </p>
           </div>
 
-          {/* Card 2 */}
-          <div className="doom-feature-card p-5 rounded">
-            <div className="flex items-center gap-2.5 text-[#f59e0b] mb-2 font-mono text-sm font-bold">
-              <Award size={18} />
-              <span className="tracking-wider">EARLY-SOLVE SCORING</span>
-            </div>
-            <p className="text-xs text-gray-400 font-mono leading-relaxed">
-              Solve in Clues 1–4 for 15 pts. Clues 5–7 yield 12 pts, Clues 8–10 yield 9 pts, Clues 11–13 yield 6 pts, and Clues 14–15 yield 3 pts.
-            </p>
-          </div>
-        </div>
-
-        {/* --- 10 Domains Overview --- */}
-        <div className="w-full terminal-panel p-5 rounded text-left">
-          <div className="flex items-center justify-between border-b border-gray-800 pb-3 mb-4">
-            <div className="flex items-center gap-2 text-xs font-mono">
-              <Target size={14} className="text-[#f59e0b]" />
-              <span className="text-[#f59e0b] font-bold tracking-widest uppercase">
-                THE 10 CANDIDATE DOMAINS
+          {/* Rotating Monologue / Decree Box */}
+          <div
+            className="depth-3 energy terminal-panel w-full max-w-2xl mx-auto mb-7 px-5 py-4 cursor-pointer group rise"
+            style={{ '--d': '0.85s' } as React.CSSProperties}
+            onClick={() => {
+              setQuoteIndex((prev) => (prev + 1) % DOOM_QUOTES.length);
+            }}
+            title="Click to cycle quote"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] tracking-[0.18em] text-gray-500 mb-2.5 pb-2 border-b border-doom-line">
+              <span className="flex items-center gap-1.5 text-doom-green">
+                <Sparkles size={12} className="animate-pulse" />
+                INTELLIGENCE BRIEFING // ROUND 1
+              </span>
+              <span className="group-hover:text-doom-glow transition-colors">
+                CLICK TO CYCLE [ {quoteIndex + 1}/{DOOM_QUOTES.length} ]
               </span>
             </div>
-            <span className="text-[11px] font-mono text-gray-500">1 DOMAIN PER PARTICIPANT</span>
+            <p className="font-regal text-base sm:text-lg text-gray-100 leading-snug px-1 min-h-[2.8em] flex items-center justify-center">
+              "{DOOM_QUOTES[quoteIndex]}"
+            </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 font-mono text-xs">
-            {[
-              'Cybersecurity',
-              'Healthcare',
-              'Space Exploration',
-              'Finance & Banking',
-              'Education & Learning',
-              'Sports',
-              'Agriculture & Farming',
-              'Transportation & Travel',
-              'Crime Investigation & Forensics',
-              'Artificial Intelligence',
-            ].map((domain, i) => (
-              <div
-                key={domain}
-                className="p-2.5 rounded bg-black/40 border border-gray-800/80 text-gray-300 text-center flex flex-col justify-center items-center gap-1 hover:border-[#10b981]/40 transition-colors"
-              >
-                <span className="text-[10px] text-[#10b981] font-bold">#{String(i + 1).padStart(2, '0')}</span>
-                <span className="font-semibold text-[11px]">{domain}</span>
-              </div>
-            ))}
+          {/* Action Buttons */}
+          <div className="depth-3 flex flex-col sm:flex-row gap-3 justify-center items-center w-full max-w-md rise" style={{ '--d': '1s' } as React.CSSProperties}>
+            <button
+              onClick={handleEnterClick}
+              className="cyber-btn text-sm sm:text-base w-full flex items-center justify-center gap-2 group"
+            >
+              <span>Enter Round 1</span>
+              <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            <button
+              onClick={handleRulesClick}
+              className="cyber-btn cyber-btn-cyan text-sm sm:text-base w-full flex items-center justify-center gap-2"
+            >
+              <Shield size={16} />
+              <span>Rules &amp; Protocol</span>
+            </button>
           </div>
-        </div>
+
+          <div aria-hidden className="mt-8 flex justify-center rise" style={{ '--d': '1.3s' } as React.CSSProperties}>
+            <span className="block w-px h-10 bg-gradient-to-b from-doom-green to-transparent scroll-hint" />
+          </div>
+        </Depth>
+
+        {/* --- Key Pillars of Nemesis Round 1 --- */}
+        <section className="px-4 sm:px-6 py-14 sm:py-20">
+          <div className="max-w-5xl mx-auto w-full">
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+              {/* Card 1 */}
+              <Reveal className="doom-feature-card energy p-6 sm:p-7">
+                <div className="flex items-center gap-3 text-doom-glow mb-3 font-mono text-sm font-bold">
+                  <span className="w-10 h-10 rounded-xl grid place-items-center bg-doom-green/10 border border-doom-green/25">
+                    <Eye size={18} />
+                  </span>
+                  <span className="tracking-[0.16em]">15 PROGRESSIVE CLUES</span>
+                </div>
+                <p className="text-[15px] text-gray-300 leading-relaxed">
+                  Each participant is assigned exactly one hidden domain. Clues evolve sequentially from abstract and challenging to highly identifiable.
+                </p>
+              </Reveal>
+
+              {/* Card 2 */}
+              <Reveal className="doom-feature-card energy p-6 sm:p-7" delay={0.12}>
+                <div className="flex items-center gap-3 text-doom-steel mb-3 font-mono text-sm font-bold">
+                  <span className="w-10 h-10 rounded-xl grid place-items-center bg-white/[0.04] border border-doom-steel/25">
+                    <Award size={18} />
+                  </span>
+                  <span className="tracking-[0.16em]">EARLY-SOLVE SCORING</span>
+                </div>
+                <p className="text-[15px] text-gray-300 leading-relaxed">
+                  Solve in Clues 1–4 for 15 pts. Clues 5–7 yield 12 pts, Clues 8–10 yield 9 pts, Clues 11–13 yield 6 pts, and Clues 14–15 yield 3 pts.
+                </p>
+              </Reveal>
+            </div>
+          </div>
+        </section>
+
+        {/* --- 10 Domains Overview --- */}
+        <section className="px-4 sm:px-6 pb-16 sm:pb-24">
+          <div className="max-w-5xl mx-auto w-full">
+            <Reveal className="w-full terminal-panel energy p-5 sm:p-6 text-left">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-doom-line pb-3.5 mb-4">
+                <div className="flex items-center gap-2 text-xs font-mono">
+                  <Target size={14} className="text-doom-green" />
+                  <span className="text-doom-steel font-bold tracking-[0.18em] uppercase">
+                    THE 10 CANDIDATE DOMAINS
+                  </span>
+                </div>
+                <span className="chip text-gray-400">1 DOMAIN PER PARTICIPANT</span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 font-mono text-xs">
+                {[
+                  'Cybersecurity',
+                  'Healthcare',
+                  'Space Exploration',
+                  'Finance & Banking',
+                  'Education & Learning',
+                  'Sports',
+                  'Agriculture & Farming',
+                  'Transportation & Travel',
+                  'Crime Investigation & Forensics',
+                  'Artificial Intelligence',
+                ].map((domain, i) => (
+                  <div
+                    key={domain}
+                    className="domain-tile px-2.5 py-3 rounded-xl bg-white/[0.025] border border-doom-line text-gray-200 text-center flex flex-col justify-center items-center gap-1 hover:border-doom-green/45 transition-colors"
+                  >
+                    <span className="text-[10px] text-doom-green font-bold">#{String(i + 1).padStart(2, '0')}</span>
+                    <span className="font-semibold text-[11.5px] leading-snug">{domain}</span>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          </div>
+        </section>
       </main>
 
       {/* --- Footer --- */}
-      <footer className="relative z-10 border-t border-gray-800/80 bg-[#020704]/90 px-4 py-3 text-center text-xs font-mono text-gray-500">
+      <footer className="relative z-10 border-t border-doom-line bg-doom-void/85 px-4 py-4 text-center text-[11px] font-mono tracking-[0.14em] text-gray-500">
         <p>NEMESIS // ROUND 1: FIND THE FLAG &bull; ALL RIGHTS RESERVED &bull; PERSISTENT VAULT ENABLED</p>
+        {/* Credit required by the 3D mask's licence (CC BY 4.0) */}
+        <p className="mt-1.5 text-[10px] tracking-normal text-gray-600">
+          3D model:{' '}
+          <a href="https://sketchfab.com/3d-models/doctor-dooms-mask-8db5464072f341a994ad1c729d9080f7" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 underline-offset-2 hover:underline">
+            "Doctor Doom's Mask" by Nicolas_Laube
+          </a>{' '}
+          (
+          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className="hover:text-gray-400 underline-offset-2 hover:underline">
+            CC BY 4.0
+          </a>
+          ), textures compressed
+        </p>
       </footer>
 
       {/* --- Rules Modal --- */}
       {showRules && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="terminal-panel max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto border-t-2 border-t-[#10b981]">
-            <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-800">
-              <div className="flex items-center gap-2">
-                <Shield className="text-[#10b981]" size={20} />
-                <h3 className="font-regal text-xl text-[#10b981] font-bold tracking-wider">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-fade-in">
+          <div className="terminal-panel energy max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 mb-5 border-b border-doom-line">
+              <div className="flex items-center gap-2.5">
+                <Shield className="text-doom-green" size={20} />
+                <h3 className="font-regal text-lg sm:text-xl text-gray-100 font-bold tracking-wider">
                   ROUND 1: FIND THE FLAG — OFFICIAL RULES
                 </h3>
               </div>
               <button
                 onClick={() => setShowRules(false)}
-                className="text-gray-500 hover:text-[#10b981] font-mono text-lg"
+                className="text-gray-500 hover:text-doom-glow font-mono text-lg"
               >
                 [X]
               </button>
             </div>
 
-            <div className="space-y-4 text-xs font-mono text-gray-300 leading-relaxed">
-              <div className="p-3 bg-black/40 border border-[#10b981]/20 rounded">
-                <span className="text-[#10b981] font-bold">1. Domain Assignment:</span>
-                <p className="mt-1 text-gray-400">
-                  Each participant is automatically assigned exactly one domain from the 10 defined domains via balanced random selection. The assignment is permanent and stored in the database.
-                </p>
-              </div>
+            <RulesContent />
 
-              <div className="p-3 bg-black/40 border border-[#10b981]/20 rounded">
-                <span className="text-[#10b981] font-bold">2. Progressive Clues:</span>
-                <p className="mt-1 text-gray-400">
-                  Click <strong>Begin Round 1</strong> to start. Clue 1 is revealed initially. You may reveal subsequent clues one by one (up to Clue 15). Revealing the next clue does NOT count as a guess and incurs NO penalty.
-                </p>
-              </div>
-
-              <div className="p-3 bg-black/40 border border-[#f59e0b]/30 rounded">
-                <span className="text-[#f59e0b] font-bold">3. Guess Submission &amp; Penalties:</span>
-                <p className="mt-1 text-gray-400">
-                  You can submit a guess at any unlocked clue. An incorrect guess records the attempt, increments your strikes, and activates the <code className="text-[#f59e0b]">Corrupted Signal Lock Screen</code> until reviewed and pardoned by an admin.
-                </p>
-              </div>
-
-              <div className="p-3 bg-black/40 border border-emerald-900/40 rounded">
-                <span className="text-emerald-400 font-bold">4. Scoring Brackets &amp; Speed Multipliers:</span>
-                <p className="mt-1 text-gray-400 mb-2">
-                  Base score depends on the clue tier at which you submit the correct domain:
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] mb-3">
-                  <div className="p-2 bg-black/50 border border-gray-800 rounded">Clues 1–4: <strong className="text-emerald-400">15 Pts</strong></div>
-                  <div className="p-2 bg-black/50 border border-gray-800 rounded">Clues 5–7: <strong className="text-emerald-400">12 Pts</strong></div>
-                  <div className="p-2 bg-black/50 border border-gray-800 rounded">Clues 8–10: <strong className="text-emerald-400">9 Pts</strong></div>
-                  <div className="p-2 bg-black/50 border border-gray-800 rounded">Clues 11–13: <strong className="text-emerald-400">6 Pts</strong></div>
-                  <div className="p-2 bg-black/50 border border-gray-800 rounded">Clues 14–15: <strong className="text-emerald-400">3 Pts</strong></div>
-                  <div className="p-2 bg-black/50 border border-red-900/50 rounded text-red-400">Exhausted (Clue 15): <strong>0 Pts (FAILED)</strong></div>
-                </div>
-                <div className="text-[11px] text-gray-300 space-y-1 border-t border-gray-800/80 pt-2">
-                  <div className="text-cyan-400 font-semibold">Speed Efficiency Multiplier:</div>
-                  <div>&bull; <strong>&lt; 2 Mins:</strong> 1.30x Lightning Bonus (+30%)</div>
-                  <div>&bull; <strong>2–5 Mins:</strong> 1.15x Swift Bonus (+15%)</div>
-                  <div>&bull; <strong>5–10 Mins:</strong> 1.00x Standard Score</div>
-                  <div>&bull; <strong>10–15 Mins:</strong> 0.90x Overtime Multiplier (-10%)</div>
-                </div>
-              </div>
-
-              <div className="p-3 bg-black/40 border border-red-900/40 rounded">
-                <span className="text-red-400 font-bold">5. 15-Minute Countdown &amp; Auto-Submission:</span>
-                <p className="mt-1 text-gray-400">
-                  Once you begin Round 1, a <strong>15-minute countdown timer</strong> begins immediately. If the 15 minutes expire before you submit a correct answer, the round is <strong>automatically submitted</strong> by the system and your performance card is generated immediately.
-                </p>
-              </div>
-
-              <div className="p-3 bg-black/40 border border-gray-800 rounded">
-                <span className="text-[#f59e0b] font-bold">6. Leaderboard &amp; Tie-Breakers:</span>
-                <p className="mt-1 text-gray-400">
-                  Leaderboard rankings are ordered strictly by: <strong>1. Highest Score</strong> &rarr; <strong>2. Lowest Time Taken</strong> (Fastest solve) &rarr; <strong>3. Lowest Wrong Guesses</strong>.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 text-center">
+            <div className="mt-7 text-center">
               <button
                 onClick={() => {
                   setShowRules(false);
@@ -295,6 +277,72 @@ export default function Landing({ onEnter }: LandingProps) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// The official rules, shown in the Rules & Protocol window.
+function RulesContent() {
+  return (
+    <div className="space-y-3 text-[13px] text-gray-300 leading-relaxed">
+      <div className="glass p-4">
+        <span className="text-doom-glow font-semibold">1. Domain Assignment:</span>
+        <p className="mt-1 text-gray-400">
+          Each participant is automatically assigned exactly one domain from the 10 defined domains via balanced random selection. The assignment is permanent and stored in the database.
+        </p>
+      </div>
+
+      <div className="glass p-4">
+        <span className="text-doom-glow font-semibold">2. Progressive Clues:</span>
+        <p className="mt-1 text-gray-400">
+          Click <strong className="text-gray-200">Begin Round 1</strong> to start. Clue 1 is revealed initially. You may reveal subsequent clues one by one (up to Clue 15). Revealing the next clue does NOT count as a guess and incurs NO penalty.
+        </p>
+      </div>
+
+      <div className="glass p-4 !border-amber-500/30 !bg-amber-500/[0.04]">
+        <span className="text-amber-400 font-semibold flex items-center gap-1.5">
+          <AlertTriangle size={14} /> 3. Guess Submission &amp; Penalties:
+        </span>
+        <p className="mt-1 text-gray-400">
+          You can submit a guess at any unlocked clue. An incorrect guess records the attempt, increments your strikes, and activates the <code className="text-amber-400">Corrupted Signal Lock Screen</code> until reviewed and pardoned by an admin.
+        </p>
+      </div>
+
+      <div className="glass p-4">
+        <span className="text-doom-glow font-semibold">4. Scoring Brackets &amp; Speed Multipliers:</span>
+        <p className="mt-1 text-gray-400 mb-3">
+          Base score depends on the clue tier at which you submit the correct domain:
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 font-mono text-[11px] mb-3">
+          <div className="p-2.5 rounded-lg bg-black/40 border border-doom-line">Clues 1–4: <strong className="text-emerald-400">15 Pts</strong></div>
+          <div className="p-2.5 rounded-lg bg-black/40 border border-doom-line">Clues 5–7: <strong className="text-emerald-400">12 Pts</strong></div>
+          <div className="p-2.5 rounded-lg bg-black/40 border border-doom-line">Clues 8–10: <strong className="text-emerald-400">9 Pts</strong></div>
+          <div className="p-2.5 rounded-lg bg-black/40 border border-doom-line">Clues 11–13: <strong className="text-emerald-400">6 Pts</strong></div>
+          <div className="p-2.5 rounded-lg bg-black/40 border border-doom-line">Clues 14–15: <strong className="text-emerald-400">3 Pts</strong></div>
+          <div className="p-2.5 rounded-lg bg-black/40 border border-red-900/50 text-red-400">Exhausted (Clue 15): <strong>0 Pts (FAILED)</strong></div>
+        </div>
+        <div className="text-[12px] text-gray-300 space-y-1 border-t border-doom-line pt-3">
+          <div className="text-cyan-400 font-semibold">Speed Efficiency Multiplier:</div>
+          <div>&bull; <strong>&lt; 2 Mins:</strong> 1.30x Lightning Bonus (+30%)</div>
+          <div>&bull; <strong>2–5 Mins:</strong> 1.15x Swift Bonus (+15%)</div>
+          <div>&bull; <strong>5–10 Mins:</strong> 1.00x Standard Score</div>
+          <div>&bull; <strong>10–15 Mins:</strong> 0.90x Overtime Multiplier (-10%)</div>
+        </div>
+      </div>
+
+      <div className="glass p-4 !border-red-900/50">
+        <span className="text-red-400 font-semibold">5. 15-Minute Countdown &amp; Auto-Submission:</span>
+        <p className="mt-1 text-gray-400">
+          Once you begin Round 1, a <strong className="text-gray-200">15-minute countdown timer</strong> begins immediately. If the 15 minutes expire before you submit a correct answer, the round is <strong className="text-gray-200">automatically submitted</strong> by the system and your performance card is generated immediately.
+        </p>
+      </div>
+
+      <div className="glass p-4">
+        <span className="text-doom-glow font-semibold">6. Leaderboard &amp; Tie-Breakers:</span>
+        <p className="mt-1 text-gray-400">
+          Leaderboard rankings are ordered strictly by: <strong className="text-gray-200">1. Highest Score</strong> &rarr; <strong className="text-gray-200">2. Lowest Time Taken</strong> (Fastest solve) &rarr; <strong className="text-gray-200">3. Lowest Wrong Guesses</strong>.
+        </p>
+      </div>
     </div>
   );
 }

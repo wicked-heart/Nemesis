@@ -116,30 +116,30 @@ export default function Round2TeamCard({
         }}
         onMouseEnter={() => setIsDirectiveHovered(true)}
         onMouseLeave={() => setIsDirectiveHovered(false)}
-        className={`p-3 sm:p-4 rounded-lg border transition-all text-left cursor-pointer select-none relative overflow-hidden group ${
+        className={`p-4 sm:p-5 rounded-2xl border transition-all duration-300 text-left cursor-pointer select-none relative overflow-hidden group ${
           isDirectiveVisible
-            ? 'bg-[#030504] border-zinc-800 shadow-[0_4px_30px_rgba(0,0,0,0.95)]'
-            : 'bg-[#020503]/80 border-zinc-900 hover:border-zinc-800'
+            ? 'bg-black/80 border-zinc-700 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.95)]'
+            : 'bg-black/50 border-zinc-800 hover:border-zinc-700'
         }`}
         title="Classified Directive — Hover or tap to decrypt"
       >
         {/* Stealth Header */}
-        <div className="flex items-center justify-between gap-2 pb-1.5 mb-2 border-b border-zinc-900 text-[10px]">
+        <div className="flex items-center justify-between gap-2 pb-2.5 mb-3 border-b border-zinc-800 text-[10px]">
           <div className="flex items-center gap-1.5">
-            <Lock size={11} className={isDirectiveVisible ? 'text-zinc-400' : 'text-zinc-600'} />
-            <span className="font-mono uppercase tracking-wider text-zinc-500 font-medium">
+            <Lock size={11} className={isDirectiveVisible ? 'text-zinc-300' : 'text-zinc-600'} />
+            <span className="font-mono uppercase tracking-[0.16em] text-zinc-400 font-medium">
               CLASSIFIED DIRECTIVE // EYES ONLY
             </span>
           </div>
 
           <div className="flex items-center gap-1 text-[9px] font-mono transition-colors">
             {isDirectiveVisible ? (
-              <span className="text-zinc-400 flex items-center gap-1 font-medium">
+              <span className="text-zinc-300 flex items-center gap-1 font-medium">
                 <Eye size={10} className="text-emerald-500/80" />
                 <span>DECRYPTED (TAP TO CONCEAL)</span>
               </span>
             ) : (
-              <span className="text-zinc-600 flex items-center gap-1 group-hover:text-zinc-400">
+              <span className="text-zinc-500 flex items-center gap-1 group-hover:text-zinc-300">
                 <EyeOff size={10} />
                 <span>CONCEALED (HOVER / TAP TO READ)</span>
               </span>
@@ -168,7 +168,7 @@ export default function Round2TeamCard({
           {/* Privacy Overlay Prompt when concealed */}
           {!isDirectiveVisible && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className="text-[10px] text-zinc-400 bg-black/95 px-2.5 py-1 rounded border border-zinc-800 tracking-wider font-mono shadow">
+              <span className="chip text-zinc-300 border-zinc-700 bg-black/90">
                 [HOVER OR TAP TO DECRYPT]
               </span>
             </div>
@@ -176,15 +176,15 @@ export default function Round2TeamCard({
         </div>
 
         {/* Stealth Discreet Footer */}
-        <div className="flex items-center justify-between text-[9px] text-zinc-600 pt-1.5 mt-2 border-t border-zinc-900/80 font-mono">
+        <div className="flex items-center justify-between text-[9px] text-zinc-500 pt-2.5 mt-3 border-t border-zinc-800/80 font-mono">
           <span>Source: Sovereign Arbiter Channel</span>
           {isDirectiveVisible ? (
-            <span className="text-zinc-400 font-medium tracking-wider animate-fade-in flex items-center gap-1">
-              <span className="text-amber-400/90 font-bold">+8 PTS</span>
+            <span className="text-zinc-300 font-medium tracking-wider animate-fade-in flex items-center gap-1">
+              <span className="text-doom-glow/90 font-bold">+8 PTS</span>
               <span>BOUNTY REWARD</span>
             </span>
           ) : (
-            <span className="text-zinc-700 italic">Status: Encrypted</span>
+            <span className="text-zinc-600 italic">Status: Encrypted</span>
           )}
         </div>
       </div>
@@ -199,27 +199,26 @@ export default function Round2TeamCard({
     const totalScore = team.total_score ?? ((you?.score || 0) + (teammate?.score || 0));
 
     return (
-      <div className={`space-y-3 font-mono ${className}`}>
-        <div className="terminal-panel p-5 sm:p-6 border-2 border-cyan-500/50 rounded-lg shadow-[0_0_35px_rgba(6,182,212,0.15)] text-xs relative overflow-hidden animate-fade-in">
-          {/* Top Arcane Glow Line */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
+      <div className={`space-y-3 ${className}`}>
+        <div className="terminal-panel p-5 sm:p-6 relative overflow-hidden animate-fade-in">
+          <div aria-hidden className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(34,197,94,0.1),transparent_70%)]" />
 
           {/* Header Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 mb-4 border-b border-gray-800">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded bg-cyan-500/20 border border-cyan-400/40 text-cyan-300">
+          <div className="relative flex flex-wrap items-start justify-between gap-3 pb-4 mb-5 border-b border-doom-line">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 shrink-0 rounded-xl grid place-items-center bg-doom-green/10 border border-doom-green/30 text-doom-glow">
                 <Users2 size={18} />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-400 text-cyan-300 text-[10px] font-bold">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="font-mono text-[10px] font-bold tracking-[0.16em] text-doom-glow">
                     ROUND 2 SQUAD #{String(team.team_number ?? 1).padStart(2, '0')}
                   </span>
-                  <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                    <CheckCircle2 size={11} /> SYNCHRONIZED
+                  <span className="font-mono text-[10px] text-gray-400 flex items-center gap-1">
+                    <CheckCircle2 size={11} className="text-doom-green" /> SYNCHRONIZED
                   </span>
                 </div>
-                <h3 className="font-regal text-base sm:text-lg text-gray-100 font-bold tracking-wider mt-0.5">
+                <h3 className="font-regal text-lg text-gray-50 font-bold tracking-wide mt-0.5 truncate">
                   {team.team_name}
                 </h3>
               </div>
@@ -229,77 +228,76 @@ export default function Round2TeamCard({
               <button
                 onClick={() => fetchTeam(true)}
                 disabled={loading}
-                className="text-gray-400 hover:text-cyan-300 transition-colors p-1.5 rounded border border-gray-800 hover:border-cyan-500/40 bg-black/40 flex items-center gap-1 text-[11px]"
+                className="chip text-gray-400 hover:text-doom-glow hover:border-doom-green/40 transition-colors"
                 title="Refresh team dossier"
               >
-                <RefreshCw size={12} className={loading ? 'animate-spin text-cyan-400' : ''} />
+                <RefreshCw size={12} className={loading ? 'animate-spin text-doom-glow' : ''} />
                 <span className="hidden sm:inline">Sync</span>
               </button>
             </div>
           </div>
 
           {/* Combined Score Highlight */}
-          <div className="p-4 rounded-lg bg-black/60 border border-cyan-500/30 mb-4 text-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-950/20 via-emerald-950/20 to-cyan-950/20 pointer-events-none" />
-            <div className="text-[11px] text-gray-400 uppercase tracking-widest mb-0.5">
+          <div className="relative text-center mb-5">
+            <div className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.2em] mb-1">
               TOTAL SYNDICATE SCORE (P1 + P2)
             </div>
-            <div className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-emerald-300 to-amber-300 tracking-wider">
-              {totalScore} <span className="text-sm font-normal text-gray-400">PTS</span>
+            <div className="font-regal text-5xl font-black text-gray-50 drop-shadow-[0_0_24px_rgba(34,197,94,0.35)]">
+              {totalScore} <span className="font-mono text-sm font-normal text-doom-glow tracking-[0.2em]">PTS</span>
             </div>
-            <div className="text-[11px] text-gray-500 mt-1 flex items-center justify-center gap-3">
-              <span>Your R1: <strong className="text-amber-400">{you?.score ?? 0} pts</strong></span>
+            <div className="font-mono text-[11px] text-gray-500 mt-2 flex items-center justify-center gap-3">
+              <span>Your R1: <strong className="text-doom-glow">{you?.score ?? 0} pts</strong></span>
               <span>&bull;</span>
-              <span>Partner R1: <strong className="text-amber-400">{teammate?.score ?? 0} pts</strong></span>
+              <span>Partner R1: <strong className="text-doom-glow">{teammate?.score ?? 0} pts</strong></span>
             </div>
           </div>
 
-          {/* Member Details: Side-by-side Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-11 items-center gap-2.5">
+          {/* Member Details: linked operative cards */}
+          <div className="relative grid grid-cols-1 gap-0">
             {/* Card 1: YOU */}
-            <div className="sm:col-span-5 p-3.5 rounded-lg border border-cyan-500/60 bg-cyan-950/30 text-left space-y-1 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
-              <div className="flex items-center justify-between text-[10px] text-gray-400 mb-1">
-                <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">
+            <div className="glass !border-doom-green/40 !bg-doom-green/[0.06] p-4 text-left space-y-1.5">
+              <div className="flex items-center justify-between font-mono text-[10px]">
+                <span className="font-bold tracking-[0.14em] text-doom-glow">
                   YOU [{isP1 ? 'PLAYER 1' : 'PLAYER 2'}]
                 </span>
-                <span className="text-emerald-400 font-bold">ACTIVE</span>
+                <span className="text-doom-green font-bold tracking-[0.14em]">ACTIVE</span>
               </div>
-              <div className="text-sm font-bold text-gray-100 truncate">
+              <div className="text-[15px] font-semibold text-gray-50 truncate">
                 {you?.name || currentParticipantName || 'You'}
               </div>
-              <div className="flex items-center justify-between text-[11px] pt-1">
-                <span className="text-gray-400">
-                  RRN: <strong className="text-[#10b981]">{you?.participant_id || currentParticipantId}</strong>
+              <div className="flex items-center justify-between font-mono text-[11px]">
+                <span className="text-gray-500">
+                  RRN: <strong className="text-gray-300 font-medium">{you?.participant_id || currentParticipantId}</strong>
                 </span>
-                <span className="text-amber-400 font-bold">
+                <span className="text-doom-glow font-bold">
                   {you?.score ?? currentScore ?? 0} PTS
                 </span>
               </div>
             </div>
 
             {/* Center Connector */}
-            <div className="sm:col-span-1 flex justify-center py-1">
-              <div className="p-2 rounded-full border border-cyan-400/60 bg-cyan-500/20 text-cyan-300 animate-pulse">
-                <Link2 size={16} />
+            <div className="flex justify-center -my-1.5 relative z-10">
+              <div className="w-9 h-9 rounded-full grid place-items-center border border-doom-green/50 bg-doom-iron text-doom-glow shadow-[0_0_18px_-2px_rgba(34,197,94,0.6)]">
+                <Link2 size={15} />
               </div>
             </div>
 
             {/* Card 2: TEAMMATE */}
-            <div className="sm:col-span-5 p-3.5 rounded-lg border border-emerald-500/60 bg-emerald-950/30 text-left space-y-1 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-              <div className="flex items-center justify-between text-[10px] text-gray-400 mb-1">
-                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">
+            <div className="glass p-4 text-left space-y-1.5">
+              <div className="flex items-center justify-between font-mono text-[10px]">
+                <span className="font-bold tracking-[0.14em] text-gray-300">
                   PARTNER [{isP1 ? 'PLAYER 2' : 'PLAYER 1'}]
                 </span>
-                <span className="text-emerald-400 font-bold">LINKED</span>
+                <span className="text-cyan-400 font-bold tracking-[0.14em]">LINKED</span>
               </div>
-              <div className="text-sm font-bold text-gray-100 truncate">
+              <div className="text-[15px] font-semibold text-gray-50 truncate">
                 {teammate?.name || 'Awaiting Partner'}
               </div>
-              <div className="flex items-center justify-between text-[11px] pt-1">
-                <span className="text-gray-400">
-                  RRN: <strong className="text-[#10b981]">{teammate?.participant_id || '---'}</strong>
+              <div className="flex items-center justify-between font-mono text-[11px]">
+                <span className="text-gray-500">
+                  RRN: <strong className="text-gray-300 font-medium">{teammate?.participant_id || '---'}</strong>
                 </span>
-                <span className="text-amber-400 font-bold">
+                <span className="text-doom-glow font-bold">
                   {teammate?.score ?? 0} PTS
                 </span>
               </div>
@@ -307,8 +305,8 @@ export default function Round2TeamCard({
           </div>
 
           {/* Footer Subtext */}
-          <div className="flex items-center justify-between text-[10px] text-gray-500 mt-4 pt-2.5 border-t border-gray-800/80">
-            <span className="flex items-center gap-1 text-cyan-400">
+          <div className="relative flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] text-gray-500 mt-5 pt-4 border-t border-doom-line">
+            <span className="flex items-center gap-1 text-doom-green">
               <Zap size={11} /> Round 2 Syndicate Established by Arbiter
             </span>
             <span>Last Synced: {lastSynced.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
@@ -323,31 +321,33 @@ export default function Round2TeamCard({
 
   // State B: Player is awaiting team pairing by Admin
   return (
-    <div className={`space-y-3 font-mono ${className}`}>
-      <div className="terminal-panel p-5 border border-dashed border-gray-700/80 rounded-lg bg-black/40 text-xs text-center space-y-3 relative overflow-hidden animate-fade-in">
-        <div className="flex items-center justify-center gap-2 text-amber-400 text-xs font-bold tracking-wider">
-          <Clock size={15} className="animate-pulse" />
-          <span>ROUND 2 // SQUAD PAIRING IN PROGRESS</span>
+    <div className={`space-y-3 ${className}`}>
+      <div className="terminal-panel p-5 sm:p-6 text-center space-y-4 relative overflow-hidden animate-fade-in">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-11 h-11 rounded-full grid place-items-center border border-doom-steel/30 bg-white/[0.03] text-doom-steel">
+            <Clock size={18} className="animate-pulse" />
+          </div>
+          <span className="font-mono text-[11px] font-bold tracking-[0.18em] text-gray-200">ROUND 2 // SQUAD PAIRING IN PROGRESS</span>
         </div>
 
-        <p className="text-gray-400 text-[11px] max-w-lg mx-auto leading-relaxed">
-          The Arbiter is currently organizing participants into <strong>teams of 2</strong> for Round 2.
+        <p className="text-gray-400 text-[13px] max-w-lg mx-auto leading-relaxed">
+          The Arbiter is currently organizing participants into <strong className="text-gray-200">teams of 2</strong> for Round 2.
           Once your team is formed, your partner's name, RRN, individual score, and combined score will manifest automatically below.
         </p>
 
         {/* Your current profile preview */}
-        <div className="inline-flex items-center gap-4 px-4 py-2 rounded bg-black/60 border border-gray-800 text-[11px]">
-          <div>
+        <div className="glass px-4 py-3 font-mono text-[11px] text-left space-y-1.5 max-w-sm mx-auto">
+          <div className="flex justify-between gap-3">
             <span className="text-gray-500">OPERATIVE: </span>
-            <strong className="text-gray-200">{currentParticipantName || team?.participant_name || 'You'}</strong>
+            <strong className="text-gray-100 truncate">{currentParticipantName || team?.participant_name || 'You'}</strong>
           </div>
-          <div>
+          <div className="flex justify-between gap-3">
             <span className="text-gray-500">RRN: </span>
-            <strong className="text-[#10b981]">{currentParticipantId || team?.participant_id || '---'}</strong>
+            <strong className="text-gray-300">{currentParticipantId || team?.participant_id || '---'}</strong>
           </div>
-          <div>
+          <div className="flex justify-between gap-3">
             <span className="text-gray-500">R1 SCORE: </span>
-            <strong className="text-amber-400">{currentScore ?? 0} PTS</strong>
+            <strong className="text-doom-glow">{currentScore ?? 0} PTS</strong>
           </div>
         </div>
 
@@ -355,9 +355,9 @@ export default function Round2TeamCard({
           <button
             onClick={() => fetchTeam(true)}
             disabled={loading}
-            className="cyber-btn cyber-btn-cyan text-[11px] px-3 py-1 flex items-center gap-1.5 mx-auto"
+            className="cyber-btn cyber-btn-cyan text-xs px-4 py-2 flex items-center gap-1.5 mx-auto"
           >
-            <RefreshCw size={11} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
             <span>{loading ? 'Checking Registry...' : 'Check Team Pairing Status'}</span>
           </button>
         </div>
