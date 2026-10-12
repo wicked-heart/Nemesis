@@ -76,16 +76,16 @@ Nemesis was designed for high-energy technical events, hackathons, and symposium
 Each competitor is assigned exactly one hidden domain from 10 predefined candidate fields. Domain assignment is performed dynamically upon registration using a **balanced random algorithm** (the system evaluates all 10 domains and assigns from the group having the lowest active sessions).
 
 The 10 candidate domains are:
-1. **Cybersecurity** (aliases accepted: `cybersecurity`, `cyber security`, `infosec`, `information security`, `network security`)
-2. **Healthcare** (aliases accepted: `healthcare`, `health care`, `medicine`, `medical`, `health`)
-3. **Space Exploration** (aliases accepted: `space exploration`, `space`, `astronomy`, `space travel`, `aerospace`)
-4. **Finance & Banking** (aliases accepted: `finance banking`, `finance and banking`, `finance`, `banking`, `financial services`)
-5. **Education & Learning** (aliases accepted: `education learning`, `education and learning`, `education`, `learning`, `teaching`)
-6. **Sports** (aliases accepted: `sports`, `sport`, `athletics`)
-7. **Agriculture & Farming** (aliases accepted: `agriculture farming`, `agriculture and farming`, `agriculture`, `farming`, `agritech`)
-8. **Transportation & Travel** (aliases accepted: `transportation travel`, `transportation and travel`, `transportation`, `travel`, `transport`, `logistics`)
-9. **Crime Investigation & Forensics** (aliases accepted: `crime investigation forensics`, `crime investigation and forensics`, `crime investigation`, `forensics`, `criminal investigation`, `forensic science`)
-10. **Artificial Intelligence** (aliases accepted: `artificial intelligence`, `ai`, `machine learning`)
+1. **Cybersecurity** (aliases accepted: `cybersecurity`, `cyber security`, `cyber`, `infosec`, `info sec`, `information security`, `network security`, `computer security`, `cyber defense`, `cyber defence`, `cyber safety`, `cyber attack`, `cyber security and defense`, `ethical hacking`, `hacking`, `it security`, `data security`, `penetration testing`, `pen testing`, `appsec`, `application security`, `cloud security`)
+2. **Healthcare** (aliases accepted: `healthcare`, `health care`, `health`, `medicine`, `medical`, `medical science`, `clinical`, `hospital`, `hospitals`, `public health`, `healthcare and medicine`, `health and medicine`, `medical care`, `doctor`, `patient care`, `health sciences`, `health science`, `biomedical`, `pharmacy`, `pharmaceutical`, `pharma`, `medtech`, `health tech`, `healthtech`)
+3. **Space Exploration** (aliases accepted: `space exploration`, `space`, `astronomy`, `space travel`, `aerospace`, `outer space`, `space science`, `space research`, `space technology`, `astrophysics`, `cosmology`, `astronautics`, `cosmonautics`, `rocket science`, `rocketry`, `planetary science`, `aeronautics`)
+4. **Finance & Banking** (aliases accepted: `finance banking`, `finance and banking`, `finance`, `banking`, `financial services`, `financial`, `bank`, `banks`, `fintech`, `fin tech`, `investment banking`, `investment`, `investing`, `financial management`, `economics`, `economy`, `wealth management`, `commercial banking`, `personal finance`, `corporate finance`, `money management`)
+5. **Education & Learning** (aliases accepted: `education learning`, `education and learning`, `education`, `learning`, `teaching`, `educational`, `edtech`, `ed tech`, `pedagogy`, `academics`, `academic`, `schooling`, `e learning`, `elearning`, `higher education`, `instruction`)
+6. **Sports** (aliases accepted: `sports`, `sport`, `athletics`, `athletic`, `sporting`, `fitness`, `physical education`, `sports science`, `sports and athletics`, `athletics and sports`, `esports`, `e sports`, `physical training`)
+7. **Agriculture & Farming** (aliases accepted: `agriculture farming`, `agriculture and farming`, `agriculture`, `farming`, `agritech`, `agri tech`, `agricultural`, `agribusiness`, `agri business`, `agronomy`, `cultivation`, `farming and agriculture`, `crop production`, `horticulture`, `agriculture science`, `agricultural science`, `farming technology`)
+8. **Transportation & Travel** (aliases accepted: `transportation travel`, `transportation and travel`, `transportation`, `travel`, `transport`, `logistics`, `transit`, `public transit`, `public transportation`, `public transport`, `mobility`, `travel and tourism`, `travel and transportation`, `tourism`, `freight`, `shipping`, `fleet management`, `traffic management`, `aviation and transport`)
+9. **Crime Investigation & Forensics** (aliases accepted: `crime investigation forensics`, `crime investigation and forensics`, `crime investigation`, `criminal investigation`, `crime`, `crimes`, `investigation`, `investigations`, `forensics`, `forensic`, `forensic science`, `criminology`, `criminalistics`, `detective`, `detectives`, `criminal`, `crime scene investigation`, `csi`, `digital forensics`, `police investigation`, `criminal justice`, `law enforcement`, `forensic investigation`, `crime and forensics`, `crime forensics`, `criminal forensics`, `crime detection`)
+10. **Artificial Intelligence** (aliases accepted: `artificial intelligence`, `ai`, `a i`, `machine learning`, `ml`, `m l`, `deep learning`, `dl`, `d l`, `neural networks`, `neural network`, `generative ai`, `gen ai`, `genai`, `artificial general intelligence`, `agi`, `a g i`, `data science`, `natural language processing`, `nlp`, `computer vision`, `ai and ml`, `ai ml`)
 
 Guesses are passed through the SQL `check_domain_match` function, which strips punctuation, collapses whitespace, normalizes casing, and validates against permitted aliases.
 
@@ -489,7 +489,8 @@ c:\Users\Musamuraaz\Desktop\project\
         ├── 20261010090000_nemesis_round1_find_the_flag.sql
         ├── 20261010110500_add_time_scoring_and_timeout.sql
         ├── 20261010190000_add_round2_teams.sql
-        └── 20261011085000_one_guess_per_clue_auto_advance.sql # Latest migration
+        ├── 20261011085000_one_guess_per_clue_auto_advance.sql
+        └── 20261012211500_normalize_and_expand_domain_guesses.sql # Latest migration: expanded synonyms & normalization
 ```
 
 ---
@@ -511,8 +512,9 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 1. Open your **Supabase Dashboard** -> **SQL Editor**.
 2. Run `supabase/setup_complete_database.sql` to initialize all tables, domains, clues, security policies, and procedures.
 3. Run `supabase/migrations/20261010190000_add_round2_teams.sql` to initialize Round 2 teams and announcements.
-4. Run `supabase/migrations/20261011085000_one_guess_per_clue_auto_advance.sql` to apply the latest single-guess and auto-advance rules.
-5. Set your administrative password using `supabase/set_admin_password.sql` (default password configured: `admin123`).
+4. Run `supabase/migrations/20261011085000_one_guess_per_clue_auto_advance.sql` to apply single-guess and auto-advance rules.
+5. Run `supabase/migrations/20261012211500_normalize_and_expand_domain_guesses.sql` to update `check_domain_match` with all normalized domain guess words and related terms.
+6. Set your administrative password using `supabase/set_admin_password.sql` (default password configured: `admin123`).
 
 ### Local Development
 ```bash
