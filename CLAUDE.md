@@ -489,6 +489,7 @@ c:\Users\Musamuraaz\Desktop\project\
     ├── setup_complete_database.sql # Master consolidated database initialization script
     ├── set_admin_password.sql     # Admin password hash generation script
     ├── update_secret_message.sql  # Secret broadcast update script
+    ├── update_clues.sql           # Clues replacement script for Supabase SQL Editor
     └── migrations/                # Chronological SQL migrations
         ├── 20261004094747_create_dr_doom_tables.sql
         ├── 20261004094827_create_dr_doom_functions.sql
@@ -499,7 +500,9 @@ c:\Users\Musamuraaz\Desktop\project\
         ├── 20261010190000_add_round2_teams.sql
         ├── 20261011085000_one_guess_per_clue_auto_advance.sql
         ├── 20261012211500_normalize_and_expand_domain_guesses.sql
-        └── 20261013002000_add_begin_round2_control.sql # Latest migration: Begin Round 2 admin control
+        ├── 20261013002000_add_begin_round2_control.sql
+        ├── 20261013070000_add_round2_bounty_and_score_adjustments.sql
+        └── 20261013184500_update_domain_clues_more_difficult.sql
 ```
 
 ---
@@ -524,7 +527,8 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 4. Run `supabase/migrations/20261011085000_one_guess_per_clue_auto_advance.sql` to apply single-guess and auto-advance rules.
 5. Run `supabase/migrations/20261012211500_normalize_and_expand_domain_guesses.sql` to update `check_domain_match` with all normalized domain guess words and related terms.
 6. Run `supabase/migrations/20261013002000_add_begin_round2_control.sql` to apply the 'Begin Round 2' admin gatekeeper control.
-7. Set your administrative password using `supabase/set_admin_password.sql` (default password configured: `admin123`).
+7. Run `supabase/update_clues.sql` (or `supabase/migrations/20261013184500_update_domain_clues_more_difficult.sql`) to apply the challenging 150-clue intelligence set.
+8. Set your administrative password using `supabase/set_admin_password.sql` (default password configured: `admin123`).
 
 ### Local Development
 ```bash
