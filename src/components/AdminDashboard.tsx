@@ -36,6 +36,7 @@ import {
   Plus,
   Minus,
   Scale,
+  Flame,
 } from 'lucide-react';
 import {
   getAdminDashboard,
@@ -65,6 +66,7 @@ import { renderClassifiedContent } from '@/lib/directiveRenderer';
 import DoomFace from './DoomFace';
 import Backdrop from './backdrop/Backdrop';
 import { sounds } from '@/lib/sound';
+import WheelOfDoom from './WheelOfDoom';
 
 interface AdminDashboardProps {
   password: string;
@@ -85,7 +87,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshCountdown, setRefreshCountdown] = useState(8);
-  const [activeTab, setActiveTab] = useState<'overview' | 'scoreboard' | 'teams'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'scoreboard' | 'teams' | 'wheel'>('overview');
   const [scoreSearchQuery, setScoreSearchQuery] = useState('');
 
   // Round 2 Team Formation States
@@ -755,7 +757,7 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
       {/* --- Main Admin Content --- */}
       <main className="relative z-10 flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 py-8 space-y-6">
         {/* KPI Stat Cards */}
-        {data?.stats && (
+        {data?.stats && activeTab !== 'wheel' && (
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 font-mono">
             <div className="doom-feature-card p-5 text-left">
               <div className="flex items-center justify-between text-gray-500 text-[10px] tracking-[0.16em] mb-3">
@@ -855,6 +857,21 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
             >
               {teamsData?.is_round2_active ? 'ACTIVE' : 'LOCKED'}
             </span>
+          </button>
+
+          <button
+            onClick={() => {
+              sounds.playClick();
+              setActiveTab('wheel');
+            }}
+            className={`px-4 py-2 rounded-full flex items-center gap-2 font-bold tracking-wider transition-all ${
+              activeTab === 'wheel'
+                ? 'bg-red-500/15 text-red-400 border border-red-500/45 shadow-[0_0_20px_-6px_rgba(239,68,68,0.5)]'
+                : 'text-gray-400 hover:text-gray-200 border border-doom-line hover:border-gray-700 bg-white/[0.02]'
+            }`}
+          >
+            <Flame size={14} className="text-red-400" />
+            <span>WHEEL OF DOOM [ROULETTE]</span>
           </button>
         </div>
 
@@ -2080,6 +2097,9 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
             </div>
           </div>
         )}
+
+        {/* VIEW 4: Wheel of Doom (Penalty Roulette) */}
+        {activeTab === 'wheel' && <WheelOfDoom />}
       </main>
 
       {/* --- Detail Modal --- */}
