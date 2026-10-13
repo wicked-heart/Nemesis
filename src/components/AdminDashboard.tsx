@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Users,
   CheckCircle2,
@@ -31,6 +31,11 @@ import {
   Megaphone,
   EyeOff,
   Zap,
+  Target,
+  ArrowRightLeft,
+  Plus,
+  Minus,
+  Scale,
 } from 'lucide-react';
 import {
   getAdminDashboard,
@@ -41,6 +46,8 @@ import {
   disbandRound2Team,
   revealBroadcastMessage,
   setRound2Active,
+  adminAdjustScore,
+  adminTransferBounty,
 } from '@/lib/api';
 import type {
   AdminDashboardData,
@@ -51,6 +58,7 @@ import type {
   Round2TeamsData,
   Round2TeamItem,
   Round2PlayerSummary,
+  ScoreTargetType,
 } from '@/lib/types';
 import { DEFAULT_SECRET_DIRECTIVE } from '@/lib/types';
 import { renderClassifiedContent } from '@/lib/directiveRenderer';
@@ -93,6 +101,26 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
   const [broadcasting, setBroadcasting] = useState(false);
   const [togglingRound2, setTogglingRound2] = useState(false);
 
+  // Score Adjustment & Bounty Transfer States
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [transferViolatorKey, setTransferViolatorKey] = useState('');
+  const [transferReporterKey, setTransferReporterKey] = useState('');
+  const [transferPoints, setTransferPoints] = useState<number>(8);
+  const [transferReason, setTransferReason] = useState('');
+  const [transferSubmitting, setTransferSubmitting] = useState(false);
+
+  const [adjustModalState, setAdjustModalState] = useState<{
+    isOpen: boolean;
+    targetType: ScoreTargetType;
+    id: string;
+    name: string;
+    currentScore: number;
+  } | null>(null);
+  const [adjustDelta, setAdjustDelta] = useState<number>(8);
+  const [adjustReason, setAdjustReason] = useState('');
+  const [adjustSubmitting, setAdjustSubmitting] = useState(false);
+  const [quickAdjustingId, setQuickAdjustingId] = useState<string | null>(null);
+
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadDashboard = useCallback(async () => {
@@ -129,6 +157,226 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
       setTeamsLoading(false);
     }
   }, [password]);
+
+  // Lookup map: participant_id -> Round2TeamItem
+  const playerTeamMap = useMemo(() => {
+    const map = new Map<string, Round2TeamItem>();
+    if (teamsData?.teams) {
+      for (const t of teamsData.teams) {
+        if (t.player1?.id) map.set(t.player1.id, t);
+        if (t.player2?.id) map.set(t.player2.id, t);
+        if (t.player1?.participant_id) map.set(t.player1.participant_id, t);
+        if (t.player2?.participant_id) map.set(t.player2.participant_id, t);
+      }
+    }
+    return map;
+  }, [teamsData]);
+
+  // Targets available for Bounty Transfer (Formed Teams + Unassigned Solo Players)
+  const transferTargets = useMemo(() => {
+    const list: Array<{
+      key: string;
+      type: ScoreTargetType;
+      id: string;
+      label: string;
+      score: number;
+      subLabel: string;
+    }> = [];
+
+    // 1. Formed Teams
+    if (teamsData?.teams) {
+      for (const t of teamsData.teams) {
+        list.push({
+          key: `TEAM:${t.id}`,
+          type: 'TEAM',
+          id: t.id,
+          label: `Team #${String(t.team_number).padStart(2, '0')}: ${t.team_name}`,
+          score: t.combined_round1_score,
+          subLabel: `${t.player1.name} & ${t.player2.name}`,
+        });
+      }
+    }
+
+    // 2. Unassigned / Solo Players (e.g. odd number of players)
+    if (teamsData?.unassigned_players) {
+      for (const p of teamsData.unassigned_players) {
+        list.push({
+          key: `INDIVIDUAL:${p.id}`,
+          type: 'INDIVIDUAL',
+          id: p.id,
+          label: `Solo: ${p.name}`,
+          score: p.round1_score,
+          subLabel: `RRN: ${p.participant_id} (Unassigned)`,
+        });
+      }
+    }
+
+    return list;
+  }, [teamsData]);
+
+  const handleOpenTransferModal = (defaultViolatorKey?: string, defaultReporterKey?: string) => {
+    sounds.playClick();
+    if (defaultViolatorKey) {
+      setTransferViolatorKey(defaultViolatorKey);
+    } else if (transferTargets.length > 0 && !transferViolatorKey) {
+      setTransferViolatorKey(transferTargets[0].key);
+    }
+
+    if (defaultReporterKey) {
+      setTransferReporterKey(defaultReporterKey);
+    } else if (transferTargets.length > 1 && !transferReporterKey) {
+      setTransferReporterKey(transferTargets[1].key);
+    }
+
+    setTransferPoints(8);
+    setTransferReason('');
+    setTransferModalOpen(true);
+  };
+
+  const handleExecuteTransfer = async () => {
+    if (!transferViolatorKey || !transferReporterKey) {
+      setTeamFeedback({ type: 'error', message: 'Please select both a Violator and a Reporter target.' });
+      return;
+    }
+    if (transferViolatorKey === transferReporterKey) {
+      setTeamFeedback({ type: 'error', message: 'Violator and Reporter cannot be the same team/player.' });
+      return;
+    }
+
+    const [vType, vId] = transferViolatorKey.split(':') as [ScoreTargetType, string];
+    const [rType, rId] = transferReporterKey.split(':') as [ScoreTargetType, string];
+    const pts = Math.abs(transferPoints) || 8;
+
+    setTransferSubmitting(true);
+    sounds.playClick();
+
+    try {
+      const res = await adminTransferBounty(
+        password,
+        vType,
+        vId,
+        rType,
+        rId,
+        pts,
+        transferReason || 'Operation Doom: Paid AI Tool Bounty Transfer'
+      );
+
+      if (res.error) {
+        sounds.playError();
+        setTeamFeedback({ type: 'error', message: res.message || res.error });
+      } else {
+        sounds.playSuccess();
+        const vTarget = transferTargets.find((t) => t.key === transferViolatorKey);
+        const rTarget = transferTargets.find((t) => t.key === transferReporterKey);
+        setTeamFeedback({
+          type: 'success',
+          message: `🎯 BOUNTY TRANSFERRED: Deducted ${res.violator?.deducted ?? pts} PTS from ${vTarget?.label || 'Violator'} and awarded ${pts} PTS to ${rTarget?.label || 'Reporter'}!`,
+        });
+        setTransferModalOpen(false);
+        await Promise.all([loadDashboard(), loadTeamsData()]);
+      }
+    } catch (err) {
+      sounds.playError();
+      setTeamFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to execute bounty transfer',
+      });
+    } finally {
+      setTransferSubmitting(false);
+    }
+  };
+
+  const handleOpenAdjustModal = (
+    targetType: ScoreTargetType,
+    id: string,
+    name: string,
+    currentScore: number
+  ) => {
+    sounds.playClick();
+    setAdjustModalState({
+      isOpen: true,
+      targetType,
+      id,
+      name,
+      currentScore,
+    });
+    setAdjustDelta(8);
+    setAdjustReason('');
+  };
+
+  const handleExecuteAdjust = async (customDelta?: number, customReason?: string) => {
+    if (!adjustModalState) return;
+    const delta = customDelta !== undefined ? customDelta : adjustDelta;
+    const reason = customReason !== undefined ? customReason : adjustReason;
+
+    setAdjustSubmitting(true);
+    sounds.playClick();
+
+    try {
+      const res = await adminAdjustScore(
+        password,
+        adjustModalState.targetType,
+        adjustModalState.id,
+        delta,
+        reason || (delta > 0 ? 'Operation Doom: AI Bounty' : 'Operation Doom: Infraction Penalty')
+      );
+
+      if (res.error) {
+        sounds.playError();
+        setTeamFeedback({ type: 'error', message: res.message || res.error });
+      } else {
+        sounds.playSuccess();
+        setTeamFeedback({
+          type: 'success',
+          message: `Score updated for ${adjustModalState.name}: ${res.previous_score} PTS ➔ ${res.new_score} PTS (${res.delta && res.delta >= 0 ? '+' : ''}${res.delta} PTS).`,
+        });
+        setAdjustModalState(null);
+        await Promise.all([loadDashboard(), loadTeamsData()]);
+      }
+    } catch (err) {
+      sounds.playError();
+      setTeamFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to update score',
+      });
+    } finally {
+      setAdjustSubmitting(false);
+    }
+  };
+
+  const handleQuickAdjust = async (
+    targetType: ScoreTargetType,
+    id: string,
+    targetName: string,
+    delta: number,
+    defaultReason: string
+  ) => {
+    sounds.playClick();
+    setQuickAdjustingId(id);
+
+    try {
+      const res = await adminAdjustScore(password, targetType, id, delta, defaultReason);
+      if (res.error) {
+        sounds.playError();
+        setTeamFeedback({ type: 'error', message: res.message || res.error });
+      } else {
+        sounds.playSuccess();
+        setTeamFeedback({
+          type: 'success',
+          message: `${delta > 0 ? 'Awarded +' : 'Deducted '}${Math.abs(delta)} PTS to ${targetName}: ${res.previous_score} PTS ➔ ${res.new_score} PTS.`,
+        });
+        await Promise.all([loadDashboard(), loadTeamsData()]);
+      }
+    } catch (err) {
+      sounds.playError();
+      setTeamFeedback({
+        type: 'error',
+        message: err instanceof Error ? err.message : 'Failed to adjust score',
+      });
+    } finally {
+      setQuickAdjustingId(null);
+    }
+  };
 
   useEffect(() => {
     loadDashboard();
@@ -656,6 +904,15 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                     <option value="PENALTY_PENDING">Penalty Pending</option>
                   </select>
                 </div>
+
+                <button
+                  onClick={() => handleOpenTransferModal()}
+                  className="cyber-btn cyber-btn-cyan text-xs px-3 py-1 flex items-center gap-1.5 font-bold"
+                  title="Operation Doom: Transfer 8 points from Violator to Reporter"
+                >
+                  <Target size={12} />
+                  <span>Bounty Transfer (-8 / +8)</span>
+                </button>
               </div>
             </div>
 
@@ -762,7 +1019,49 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
 
                             {/* Score */}
                             <td className="py-3 px-2 text-center">
-                              <span className="font-bold text-doom-glow">{p.score}</span>
+                              {(() => {
+                                const assignedTeam = playerTeamMap.get(p.participant_id) || playerTeamMap.get(p.session_id);
+                                return (
+                                  <div className="flex flex-col items-center">
+                                    <span className="font-bold text-doom-glow">{p.score} PTS</span>
+                                    {assignedTeam ? (
+                                      <button
+                                        onClick={() => handleOpenAdjustModal('TEAM', assignedTeam.id, assignedTeam.team_name, assignedTeam.combined_round1_score)}
+                                        className="text-[9px] text-cyan-400 hover:text-cyan-200 mt-0.5 underline transition-colors"
+                                        title={`Belongs to Team #${assignedTeam.team_number} (Combined: ${assignedTeam.combined_round1_score} PTS). Alter team score.`}
+                                      >
+                                        Team #{assignedTeam.team_number} ({assignedTeam.combined_round1_score}p)
+                                      </button>
+                                    ) : (
+                                      <div className="flex items-center gap-1 mt-1">
+                                        <button
+                                          onClick={() => handleQuickAdjust('INDIVIDUAL', p.participant_id, p.participant_name, 8, 'Operation Doom: AI Bounty')}
+                                          disabled={quickAdjustingId === p.participant_id}
+                                          className="px-1 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-900 text-[9px] font-bold"
+                                          title="Award +8 AI Bounty to solo player"
+                                        >
+                                          +8
+                                        </button>
+                                        <button
+                                          onClick={() => handleQuickAdjust('INDIVIDUAL', p.participant_id, p.participant_name, -8, 'Operation Doom: Infraction Penalty')}
+                                          disabled={quickAdjustingId === p.participant_id}
+                                          className="px-1 py-0.5 rounded bg-red-950/60 border border-red-500/40 text-red-300 hover:bg-red-900 text-[9px] font-bold"
+                                          title="Deduct -8 Penalty from solo player"
+                                        >
+                                          -8
+                                        </button>
+                                        <button
+                                          onClick={() => handleOpenAdjustModal('INDIVIDUAL', p.participant_id, p.participant_name, p.score)}
+                                          className="px-1 py-0.5 rounded bg-white/[0.04] border border-gray-700 text-gray-300 hover:border-gray-500 text-[9px]"
+                                          title="Custom adjust solo score"
+                                        >
+                                          <Scale size={9} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </td>
 
                             {/* Started */}
@@ -837,6 +1136,15 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                 <div className="text-gray-400 text-xs">
                   Showing <span className="text-doom-steel font-bold">{scoreboardList.length}</span> ranked participants
                 </div>
+                <button
+                  onClick={() => handleOpenTransferModal()}
+                  className="cyber-btn cyber-btn-cyan text-xs px-3 py-1.5 flex items-center gap-1.5 font-bold"
+                  title="Operation Doom: Transfer 8 points from Violator to Reporter"
+                >
+                  <Target size={13} />
+                  <span>Bounty Transfer (-8 / +8)</span>
+                </button>
+
                 <button
                   onClick={handleExportScores}
                   className="cyber-btn cyber-btn-cyan text-xs px-3 py-1.5 flex items-center gap-1.5"
@@ -937,15 +1245,50 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
 
                             {/* Score */}
                             <td className="py-3.5 px-6 text-right">
-                              <span
-                                className={`text-base font-black tracking-wider ${
-                                  p.score > 0
-                                    ? 'text-doom-green drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]'
-                                    : 'text-gray-500'
-                                }`}
-                              >
-                                {p.score} <span className="text-xs font-normal text-gray-400">PTS</span>
-                              </span>
+                              {(() => {
+                                const assignedTeam = playerTeamMap.get(p.participant_id) || playerTeamMap.get(p.session_id);
+                                return (
+                                  <div className="flex flex-col items-end">
+                                    <span
+                                      className={`text-base font-black tracking-wider ${
+                                        p.score > 0
+                                          ? 'text-doom-green drop-shadow-[0_0_8px_rgba(34,197,94,0.3)]'
+                                          : 'text-gray-500'
+                                      }`}
+                                    >
+                                      {p.score} <span className="text-xs font-normal text-gray-400">PTS</span>
+                                    </span>
+                                    {assignedTeam ? (
+                                      <button
+                                        onClick={() => handleOpenAdjustModal('TEAM', assignedTeam.id, assignedTeam.team_name, assignedTeam.combined_round1_score)}
+                                        className="text-[9px] text-cyan-400 hover:text-cyan-200 mt-0.5 underline transition-colors"
+                                        title={`Team #${assignedTeam.team_number} (Combined: ${assignedTeam.combined_round1_score} PTS). Click to alter team score.`}
+                                      >
+                                        Team #{assignedTeam.team_number} ({assignedTeam.combined_round1_score}p)
+                                      </button>
+                                    ) : (
+                                      <div className="flex items-center gap-1 mt-1">
+                                        <button
+                                          onClick={() => handleQuickAdjust('INDIVIDUAL', p.participant_id, p.participant_name, 8, 'Operation Doom: AI Bounty')}
+                                          disabled={quickAdjustingId === p.participant_id}
+                                          className="px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-800 text-[9px] font-bold"
+                                          title="Award +8 AI Bounty to solo player"
+                                        >
+                                          +8
+                                        </button>
+                                        <button
+                                          onClick={() => handleQuickAdjust('INDIVIDUAL', p.participant_id, p.participant_name, -8, 'Operation Doom: Penalty')}
+                                          disabled={quickAdjustingId === p.participant_id}
+                                          className="px-1.5 py-0.5 rounded bg-red-950/60 border border-red-500/40 text-red-300 hover:bg-red-800 text-[9px] font-bold"
+                                          title="Deduct -8 Penalty from solo player"
+                                        >
+                                          -8
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             </td>
                           </tr>
                         );
@@ -1028,11 +1371,20 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 shrink-0 w-full md:w-auto">
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full md:w-auto">
+                <button
+                  onClick={() => handleOpenTransferModal()}
+                  className="w-full sm:w-auto cyber-btn text-xs px-5 py-3.5 flex items-center justify-center gap-2 font-bold tracking-wider bg-emerald-950/40 border-emerald-500/60 text-emerald-300 hover:bg-emerald-900/60 hover:text-white shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all"
+                  title="Transfer 8 points from Violator caught using paid AI tools to Reporter"
+                >
+                  <Target size={15} className="text-emerald-400" />
+                  <span>BOUNTY TRANSFER (-8 / +8)</span>
+                </button>
+
                 <button
                   onClick={handleToggleRound2Active}
                   disabled={togglingRound2}
-                  className={`w-full md:w-auto cyber-btn text-xs px-7 py-3.5 flex items-center justify-center gap-2 font-bold tracking-wider transition-all ${
+                  className={`w-full sm:w-auto cyber-btn text-xs px-6 py-3.5 flex items-center justify-center gap-2 font-bold tracking-wider transition-all ${
                     teamsData?.is_round2_active
                       ? 'bg-amber-950/60 border-amber-500/60 text-amber-300 hover:bg-red-950/50 hover:border-red-500/60 hover:text-red-300'
                       : 'cyber-btn-cyan shadow-[0_0_25px_rgba(16,185,129,0.4)]'
@@ -1381,13 +1733,53 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
                               <div className="text-right">
-                                <span className="text-[10px] text-gray-500 block uppercase">Round 1</span>
+                                <span className="text-[10px] text-gray-500 block uppercase">Solo Score</span>
                                 <span className="font-bold text-doom-glow text-xs">
                                   {player.round1_score} PTS
                                 </span>
                               </div>
+
+                              {/* Solo score adjust buttons */}
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleQuickAdjust('INDIVIDUAL', player.id, player.name, 8, 'Operation Doom: AI Tool Bounty');
+                                  }}
+                                  disabled={quickAdjustingId === player.id}
+                                  className="px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-900 text-[9px] font-bold font-mono"
+                                  title="Award +8 AI Bounty to solo participant"
+                                >
+                                  +8
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleQuickAdjust('INDIVIDUAL', player.id, player.name, -8, 'Operation Doom: Infraction Penalty');
+                                  }}
+                                  disabled={quickAdjustingId === player.id}
+                                  className="px-1.5 py-0.5 rounded bg-red-950/60 border border-red-500/40 text-red-300 hover:bg-red-900 text-[9px] font-bold font-mono"
+                                  title="Deduct -8 Penalty from solo participant"
+                                >
+                                  -8
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenAdjustModal('INDIVIDUAL', player.id, player.name, player.round1_score);
+                                  }}
+                                  className="px-1.5 py-0.5 rounded bg-white/[0.04] border border-gray-700 text-gray-300 hover:border-gray-500 text-[9px]"
+                                  title="Custom adjust solo score"
+                                >
+                                  <Scale size={9} />
+                                </button>
+                              </div>
+
                               <span
                                 className={`text-[10px] px-2 py-0.5 rounded border uppercase font-bold ${
                                   isSelected
@@ -1506,10 +1898,51 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                                 </h4>
                               </div>
 
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-1.5">
                                 <span className="px-2 py-0.5 rounded bg-doom-green/10 border border-doom-green/30 text-doom-glow font-bold text-[11px]">
                                   Combined: {team.combined_round1_score} PTS
+                                  {team.score_adjustment ? (
+                                    <span className={`ml-1 text-[10px] ${team.score_adjustment > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                      ({team.score_adjustment > 0 ? `+${team.score_adjustment}` : team.score_adjustment})
+                                    </span>
+                                  ) : null}
                                 </span>
+
+                                {/* Quick Bounty Actions */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuickAdjust('TEAM', team.id, team.team_name, 8, 'Operation Doom: AI Tool Bounty')}
+                                  disabled={quickAdjustingId === team.id}
+                                  className="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 hover:bg-emerald-900 text-[10px] font-bold font-mono transition-all flex items-center gap-0.5 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
+                                  title="Award +8 AI Bounty to Team"
+                                >
+                                  <Target size={11} /> +8
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuickAdjust('TEAM', team.id, team.team_name, -8, 'Operation Doom: Target Infraction Penalty')}
+                                  disabled={quickAdjustingId === team.id}
+                                  className="px-2 py-0.5 rounded bg-red-950/60 border border-red-500/50 text-red-300 hover:bg-red-900 text-[10px] font-bold font-mono transition-all flex items-center gap-0.5"
+                                  title="Deduct -8 Penalty from Team (floored at 0)"
+                                >
+                                  <Minus size={11} /> -8
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenAdjustModal('TEAM', team.id, team.team_name, team.combined_round1_score)}
+                                  className="px-2 py-0.5 rounded bg-white/[0.04] border border-gray-700 text-gray-300 hover:border-gray-500 text-[10px] font-mono transition-all"
+                                  title="Custom Adjust Team Score"
+                                >
+                                  Adjust
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenTransferModal(undefined, `TEAM:${team.id}`)}
+                                  className="px-2 py-0.5 rounded bg-cyan-950/40 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-900/60 text-[10px] font-mono flex items-center gap-1 transition-all"
+                                  title="Open Bounty Transfer with this team as Reporter"
+                                >
+                                  <ArrowRightLeft size={10} /> Transfer
+                                </button>
 
                                 <button
                                   onClick={() => handleDisbandTeam(team.id, team.team_name)}
@@ -1865,6 +2298,336 @@ export default function AdminDashboard({ password, onLogout }: AdminDashboardPro
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* OPERATION DOOM: BOUNTY TRANSFER MODAL (-8 PTS from Violator, +8 PTS to Reporter) */}
+      {transferModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in font-mono">
+          <div className="terminal-panel max-w-2xl w-full border border-emerald-500/50 rounded-xl overflow-hidden shadow-[0_0_50px_rgba(16,185,129,0.3)] bg-gradient-to-b from-zinc-950 to-black p-6 space-y-6">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-gray-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center text-emerald-400">
+                  <Target size={20} />
+                </div>
+                <div>
+                  <h3 className="font-regal text-lg font-bold text-gray-100 tracking-wider">
+                    OPERATION DOOM // BOUNTY TRANSFER PROTOCOL
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    Transfer points from a competitor caught using paid AI tools to the reporting team.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTransferModalOpen(false)}
+                className="text-gray-500 hover:text-white p-1 rounded"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Target Selector Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Violator / Target */}
+              <div className="p-4 rounded-lg bg-red-950/20 border border-red-500/40 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Minus size={14} /> VIOLATOR (TARGET DEDUCTION)
+                  </span>
+                  <span className="text-[10px] text-red-300 bg-red-950/60 px-2 py-0.5 rounded border border-red-900/60">
+                    -{transferPoints} PTS
+                  </span>
+                </div>
+
+                <label className="block text-[11px] text-gray-400">
+                  Select team/solo caught using paid AI:
+                </label>
+                <select
+                  value={transferViolatorKey}
+                  onChange={(e) => setTransferViolatorKey(e.target.value)}
+                  className="w-full bg-black/90 border border-red-900/60 text-gray-200 rounded p-2 text-xs focus:outline-none focus:border-red-500"
+                >
+                  <option value="">-- Choose Violator --</option>
+                  {transferTargets.map((t) => (
+                    <option key={`v-${t.key}`} value={t.key}>
+                      {t.label} ({t.score} PTS)
+                    </option>
+                  ))}
+                </select>
+
+                {/* Violator score preview */}
+                {(() => {
+                  const vTarget = transferTargets.find((t) => t.key === transferViolatorKey);
+                  if (!vTarget) return null;
+                  const newScore = Math.max(0, vTarget.score - transferPoints);
+                  return (
+                    <div className="text-[11px] text-gray-300 pt-1 border-t border-red-900/40 flex justify-between">
+                      <span>Score Projection:</span>
+                      <span className="font-bold">
+                        {vTarget.score} PTS &rarr; <span className="text-red-400">{newScore} PTS</span>
+                        {newScore === 0 && vTarget.score < transferPoints && ' (Floored at 0)'}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Reporter / Hunter */}
+              <div className="p-4 rounded-lg bg-emerald-950/20 border border-emerald-500/40 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Plus size={14} /> REPORTER (BOUNTY REWARD)
+                  </span>
+                  <span className="text-[10px] text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-900/60">
+                    +{transferPoints} PTS
+                  </span>
+                </div>
+
+                <label className="block text-[11px] text-gray-400">
+                  Select team/solo who reported the violation:
+                </label>
+                <select
+                  value={transferReporterKey}
+                  onChange={(e) => setTransferReporterKey(e.target.value)}
+                  className="w-full bg-black/90 border border-emerald-900/60 text-gray-200 rounded p-2 text-xs focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="">-- Choose Reporter --</option>
+                  {transferTargets.map((t) => (
+                    <option key={`r-${t.key}`} value={t.key}>
+                      {t.label} ({t.score} PTS)
+                    </option>
+                  ))}
+                </select>
+
+                {/* Reporter score preview */}
+                {(() => {
+                  const rTarget = transferTargets.find((t) => t.key === transferReporterKey);
+                  if (!rTarget) return null;
+                  const newScore = rTarget.score + transferPoints;
+                  return (
+                    <div className="text-[11px] text-gray-300 pt-1 border-t border-emerald-900/40 flex justify-between">
+                      <span>Score Projection:</span>
+                      <span className="font-bold">
+                        {rTarget.score} PTS &rarr; <span className="text-emerald-400">{newScore} PTS</span>
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Points Preset Selector & Reason */}
+            <div className="space-y-3 pt-1 border-t border-gray-800">
+              <div>
+                <label className="block text-[11px] text-gray-400 mb-1.5">
+                  TRANSFER AMOUNT (POINTS)
+                </label>
+                <div className="flex items-center gap-2">
+                  {[8, 16, 24].map((pts) => (
+                    <button
+                      key={pts}
+                      type="button"
+                      onClick={() => setTransferPoints(pts)}
+                      className={`px-3 py-1.5 rounded text-xs font-bold border transition-all ${
+                        transferPoints === pts
+                          ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300'
+                          : 'bg-black/40 border-gray-800 text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      {pts} PTS {pts === 8 ? '(1 Target)' : pts === 16 ? '(2 Targets)' : '(3 Targets)'}
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    min="1"
+                    value={transferPoints}
+                    onChange={(e) => setTransferPoints(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="cyber-input w-24 text-xs py-1.5 text-center font-bold"
+                    placeholder="Custom"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] text-gray-400 mb-1">
+                  CLASSIFIED DIRECTIVE NOTE / EVIDENCE (OPTIONAL)
+                </label>
+                <input
+                  type="text"
+                  value={transferReason}
+                  onChange={(e) => setTransferReason(e.target.value)}
+                  placeholder="e.g. Confirmed Claude Pro subscription during active round"
+                  className="cyber-input w-full text-xs py-1.5"
+                  maxLength={120}
+                />
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-800">
+              <button
+                onClick={() => setTransferModalOpen(false)}
+                disabled={transferSubmitting}
+                className="px-4 py-2 rounded text-xs text-gray-400 hover:text-white border border-transparent hover:border-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleExecuteTransfer}
+                disabled={transferSubmitting || !transferViolatorKey || !transferReporterKey}
+                className="cyber-btn cyber-btn-cyan text-xs px-6 py-2 flex items-center gap-2 font-bold disabled:opacity-50"
+              >
+                {transferSubmitting ? (
+                  <>
+                    <Loader2 size={13} className="animate-spin text-doom-steel" />
+                    <span>EXECUTING TRANSFER...</span>
+                  </>
+                ) : (
+                  <>
+                    <ArrowRightLeft size={13} />
+                    <span>CONFIRM BOUNTY TRANSFER</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ALTER SCORE MODAL (TEAM OR SOLO UNASSIGNED PARTICIPANT) */}
+      {adjustModalState?.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in font-mono">
+          <div className="terminal-panel max-w-md w-full border border-cyan-500/50 rounded-xl overflow-hidden shadow-[0_0_50px_rgba(6,182,212,0.3)] bg-gradient-to-b from-zinc-950 to-black p-6 space-y-5">
+            {/* Header */}
+            <div className="flex items-start justify-between border-b border-gray-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-lg bg-cyan-500/20 border border-cyan-500/50 flex items-center justify-center text-cyan-400">
+                  <Scale size={18} />
+                </div>
+                <div>
+                  <h3 className="font-regal text-base font-bold text-gray-100 tracking-wider">
+                    {adjustModalState.targetType === 'TEAM' ? 'ALTER TEAM SCORE' : 'ALTER SOLO SCORE'}
+                  </h3>
+                  <p className="text-[11px] text-gray-400 truncate max-w-[260px]">
+                    {adjustModalState.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setAdjustModalState(null)}
+                className="text-gray-500 hover:text-white p-1 rounded"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Current & Projected Score */}
+            <div className="p-3.5 rounded-lg bg-black/60 border border-gray-800 flex items-center justify-between text-xs">
+              <div>
+                <span className="text-[10px] text-gray-500 block uppercase">Current Score</span>
+                <span className="text-xl font-bold text-gray-200">
+                  {adjustModalState.currentScore} PTS
+                </span>
+              </div>
+              <ArrowRight size={18} className="text-gray-600" />
+              <div className="text-right">
+                <span className="text-[10px] text-gray-500 block uppercase">Projected Score</span>
+                <span
+                  className={`text-xl font-bold ${
+                    adjustDelta >= 0 ? 'text-doom-glow' : 'text-red-400'
+                  }`}
+                >
+                  {Math.max(0, adjustModalState.currentScore + adjustDelta)} PTS
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Pills */}
+            <div>
+              <label className="block text-[11px] text-gray-400 mb-1.5">
+                QUICK POINT PRESETS
+              </label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {[8, 16, -8, -16].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setAdjustDelta(d)}
+                    className={`py-1.5 px-2 rounded text-xs font-bold border transition-all ${
+                      adjustDelta === d
+                        ? d > 0
+                          ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300'
+                          : 'bg-red-500/20 border-red-400 text-red-300'
+                        : 'bg-black/40 border-gray-800 text-gray-400 hover:text-gray-200'
+                    }`}
+                  >
+                    {d > 0 ? `+${d}` : d} PTS
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Delta Input */}
+            <div>
+              <label className="block text-[11px] text-gray-400 mb-1">
+                CUSTOM DELTA (+ / - POINTS)
+              </label>
+              <input
+                type="number"
+                value={adjustDelta}
+                onChange={(e) => setAdjustDelta(parseInt(e.target.value) || 0)}
+                className="cyber-input w-full text-xs py-1.5 font-bold"
+                placeholder="e.g. +8 or -8"
+              />
+              <p className="text-[10px] text-gray-500 mt-1">
+                Positive numbers add points; negative numbers deduct points. Final score is floored at 0.
+              </p>
+            </div>
+
+            {/* Reason */}
+            <div>
+              <label className="block text-[11px] text-gray-400 mb-1">
+                AUDIT REASON (OPTIONAL)
+              </label>
+              <input
+                type="text"
+                value={adjustReason}
+                onChange={(e) => setAdjustReason(e.target.value)}
+                placeholder="e.g. Operation Doom AI Bounty"
+                className="cyber-input w-full text-xs py-1.5"
+                maxLength={120}
+              />
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-gray-800">
+              <button
+                onClick={() => setAdjustModalState(null)}
+                disabled={adjustSubmitting}
+                className="px-4 py-2 rounded text-xs text-gray-400 hover:text-white border border-transparent hover:border-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => handleExecuteAdjust()}
+                disabled={adjustSubmitting || adjustDelta === 0}
+                className="cyber-btn cyber-btn-cyan text-xs px-5 py-2 flex items-center gap-1.5 font-bold disabled:opacity-50"
+              >
+                {adjustSubmitting ? (
+                  <>
+                    <Loader2 size={12} className="animate-spin text-doom-steel" />
+                    <span>SAVING...</span>
+                  </>
+                ) : (
+                  <span>APPLY SCORE ADJUSTMENT</span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

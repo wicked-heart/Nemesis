@@ -354,6 +354,8 @@ All database procedures reside in `public` schema and run with `SECURITY DEFINER
 | `reveal_round2_broadcast_message` | `admin_pwd text, p_reveal bool, p_message text` | Updates and reveals/conceals *Operation Doom* broadcast decree live. |
 | `get_round2_broadcast_message` | *(none)* | Public read procedure returning broadcast status and payload for client polling. |
 | `get_player_team_info` | `p_session_token uuid` | Returns assigned syndicate info, teammate name, scores, and broadcast payload for a player. |
+| `admin_adjust_score` | `admin_pwd text, p_target_type text, p_target_id uuid, p_delta integer, p_reason text` | Alters score for a Round 2 Team (`score_adjustment`) or unassigned solo player (`game_sessions.score`), strictly floored at 0. |
+| `admin_transfer_bounty` | `admin_pwd text, p_violator_type text, p_violator_id uuid, p_reporter_type text, p_reporter_id uuid, p_points integer, p_reason text` | Atomically transfers bounty points (-8 from Violator, +8 to Reporter) with audit logging and non-negative score flooring. |
 
 ---
 

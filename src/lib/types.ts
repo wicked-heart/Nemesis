@@ -216,6 +216,45 @@ export interface Round2TeamItem {
   player1: Round2PlayerSummary;
   player2: Round2PlayerSummary;
   combined_round1_score: number;
+  score_adjustment?: number;
+}
+
+export type ScoreTargetType = 'TEAM' | 'INDIVIDUAL';
+
+export interface AdminAdjustScoreResult {
+  success?: boolean;
+  target_type?: ScoreTargetType;
+  team_id?: string;
+  team_name?: string;
+  participant_id?: string;
+  participant_name?: string;
+  previous_score?: number;
+  new_score?: number;
+  delta?: number;
+  score_adjustment?: number;
+  error?: string;
+  message?: string;
+}
+
+export interface AdminTransferBountyResult {
+  success?: boolean;
+  points_transferred?: number;
+  violator?: {
+    type: ScoreTargetType;
+    id: string;
+    previous_score: number;
+    new_score: number;
+    deducted: number;
+  };
+  reporter?: {
+    type: ScoreTargetType;
+    id: string;
+    previous_score: number;
+    new_score: number;
+    awarded: number;
+  };
+  error?: string;
+  message?: string;
 }
 
 export interface Round2TeamsData {

@@ -15,6 +15,9 @@ import type {
   PlayerTeamInfo,
   Round2BroadcastMessage,
   RevealBroadcastResult,
+  AdminAdjustScoreResult,
+  AdminTransferBountyResult,
+  ScoreTargetType,
 } from './types';
 import { DEFAULT_SECRET_DIRECTIVE } from './types';
 
@@ -289,4 +292,44 @@ export async function getRound2Status(): Promise<{ is_round2_active: boolean; st
   const { data, error } = await supabase.rpc('get_round2_status');
   if (error) throw new Error(error.message);
   return data as { is_round2_active: boolean; started_at?: string | null };
+}
+
+export async function adminAdjustScore(
+  password: string,
+  targetType: ScoreTargetType,
+  targetId: string,
+  delta: number,
+  reason?: string
+): Promise<AdminAdjustScoreResult> {
+  const { data, error } = await supabase.rpc('admin_adjust_score', {
+    admin_pwd: password,
+    p_target_type: targetType,
+    p_target_id: targetId,
+    p_delta: delta,
+    p_reason: reason || null,
+  });
+  if (error) throw new Error(error.message);
+  return data as AdminAdjustScoreResult;
+}
+
+export async function adminTransferBounty(
+  password: string,
+  violatorType: ScoreTargetType,
+  violatorId: string,
+  reporterType: ScoreTargetType,
+  reporterId: string,
+  points: number = 8,
+  reason?: string
+): Promise<AdminTransferBountyResult> {
+  const { data, error } = await supabase.rpc('admin_transfer_bounty', {
+    admin_pwd: password,
+    p_violator_type: violatorType,
+    p_violator_id: violatorId,
+    p_reporter_type: reporterType,
+    p_reporter_id: reporterId,
+    p_points: points,
+    p_reason: reason || null,
+  });
+  if (error) throw new Error(error.message);
+  return data as AdminTransferBountyResult;
 }
