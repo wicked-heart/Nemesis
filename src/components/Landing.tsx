@@ -10,6 +10,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import Backdrop from './backdrop/Backdrop';
+import NoCopy from './NoCopy';
 import DoomHero from './doom3d/DoomHero';
 import { Reveal } from './motion/Reveal';
 import Depth from './motion/Depth';
@@ -49,6 +50,7 @@ export default function Landing({ onEnter }: LandingProps) {
     <div className="min-h-screen cyber-grid scanlines relative text-gray-200 flex flex-col justify-between selection:bg-doom-green selection:text-black">
       {/* Live background: the club site's moving dots, with a clear stage in the middle for the mask */}
       <Backdrop stage />
+      <NoCopy />
 
       {/* --- Top Sovereign Status Bar --- */}
       <header className="hud-header sticky top-0 z-40 px-4 sm:px-6 bg-doom-void/85 border-b border-doom-line">

@@ -30,6 +30,7 @@ import {
 import type { GameSessionState, ClueItem, GuessRecord } from '@/lib/types';
 import DoomFace from './DoomFace';
 import Backdrop from './backdrop/Backdrop';
+import NoCopy from './NoCopy';
 import Doom3D from './doom3d/Doom3D';
 import SignalLostOverlay from './SignalLostOverlay';
 import Round2TeamCard from './Round2TeamCard';
@@ -382,6 +383,7 @@ export default function Dashboard({ onComplete, onExit }: DashboardProps) {
   return (
     <div className="min-h-screen cyber-grid scanlines text-gray-200 flex flex-col relative selection:bg-doom-green selection:text-black">
       <Backdrop calm />
+      <NoCopy />
 
       {/* --- Game HUD (top bar) --- */}
       <header className="hud-header relative md:sticky md:top-0 z-30 border-b border-doom-line bg-doom-void/95">

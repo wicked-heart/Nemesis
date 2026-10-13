@@ -3,6 +3,7 @@ import { Award, CheckCircle2, XCircle, Loader2, Target, Calendar, AlertTriangle,
 import { getGameState, clearSessionToken } from '@/lib/api';
 import type { GameSessionState } from '@/lib/types';
 import Backdrop from './backdrop/Backdrop';
+import NoCopy from './NoCopy';
 import Doom3D from './doom3d/Doom3D';
 import Round2TeamCard from './Round2TeamCard';
 import { sounds } from '@/lib/sound';
@@ -90,6 +91,7 @@ export default function Completion({ onExit }: CompletionProps) {
   return (
     <div className="min-h-screen cyber-grid scanlines flex flex-col items-center px-4 py-12 sm:py-16 relative animate-fade-in text-gray-200">
       <Backdrop />
+      <NoCopy />
 
       <div className="max-w-2xl w-full relative z-10">
         {/* --- Doom's verdict --- */}

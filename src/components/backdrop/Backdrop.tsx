@@ -160,6 +160,8 @@ const dotFragment = /* glsl */ `
     vec3 col = v < 0.5 ? mix(uLow, uMid, v * 2.0) : mix(uMid, uHigh, v * 2.0 - 1.0);
     vec2 uv = css / uRes - 0.5;
     float vignette = 1.0 - smoothstep(0.25, 0.95, length(uv * vec2(1.05, 1.15)));
+    // The lock screen keeps its dots right out to the edges, top to bottom.
+    vignette = mix(vignette, 0.7 + 0.3 * vignette, uCorrupt);
     float a = mask * uAlpha * (0.16 + 0.84 * v) * vignette;
     // The whole signal flickers now and then on the lock screen.
     a *= 1.0 - uCorrupt * 0.35 * step(0.92, hash(tick * 3.17));
@@ -171,8 +173,9 @@ const dotFragment = /* glsl */ `
       float g = length((p - uRes * vec2(0.5, 0.58)) / (uRes * vec2(1.2, 0.95)));
       back = g < 0.55 ? mix(uBackA, uBackB, g / 0.55) : mix(uBackB, uBackC, min((g - 0.55) / 0.45, 1.0));
       // Dots fade out in the middle: radial-gradient(ellipse 62% 58% at 50% 60%, transparent 35%, black 85%)
+      // (not on the lock screen: there the corrupted signal fills the whole screen).
       float e = length((p - uRes * vec2(0.5, 0.6)) / (uRes * vec2(0.62, 0.58)));
-      a *= clamp((e - 0.35) / 0.5, 0.0, 1.0);
+      a *= mix(clamp((e - 0.35) / 0.5, 0.0, 1.0), 1.0, uCorrupt);
     }
     // A touch of noise so the soft gradient never shows bands (browsers do the same for CSS gradients).
     back += (fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715)))) - 0.5) / 255.0;

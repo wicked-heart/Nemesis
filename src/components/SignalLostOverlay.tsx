@@ -129,7 +129,7 @@ export default function SignalLostOverlay({
   // ==========================================
   return (
     <div
-      className="fixed inset-0 z-[9999] pointer-events-auto select-none bg-[#030805] doom-screen-jitter overflow-y-auto flex flex-col justify-between p-4 sm:p-6 cursor-not-allowed selection:bg-[#39ff88] selection:text-black"
+      className="fixed inset-0 z-[9999] pointer-events-auto select-none bg-[#030805] doom-screen-jitter overflow-hidden cursor-not-allowed selection:bg-[#39ff88] selection:text-black"
       role="dialog"
       aria-modal="true"
       aria-label="Corrupted Signal Locked by Doom"
@@ -154,179 +154,182 @@ export default function SignalLostOverlay({
       <div className="fixed inset-x-0 top-1/3 h-12 bg-[#39ff88]/10 mix-blend-screen doom-slice-band-1 pointer-events-none" />
       <div className="fixed inset-x-0 top-3/5 h-16 bg-red-500/10 mix-blend-screen doom-slice-band-2 pointer-events-none" />
 
-      {/* --- TOP BAR / HUD CORNER PANEL & TELEMETRY --- */}
-      <header className="relative z-10 w-full max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3 font-mono text-xs pb-4 border-b border-[#1f6f43]/40">
-        {/* Left: Operative ID */}
-        <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-2xl border border-[#1f6f43]/60">
-          <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
-          <div>
-            <div className="text-gray-500 text-[10px] tracking-[0.18em] uppercase">DISCIPLINED OPERATIVE</div>
-            <div className="text-emerald-100 font-bold tracking-wide">
-              {playerName || 'UNKNOWN'} <span className="text-gray-500 text-[10px] font-normal">[RRN: {rrn || 'N/A'}]</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Center: Live Telemetry */}
-        <div className="hidden md:flex items-center gap-3 text-[11px] text-emerald-400/80 bg-black/50 px-4 py-2 rounded-full border border-gray-800">
-          <span>FREQ: 88.4 MHz</span>
-          <span className="text-gray-600">//</span>
-          <span>SIGNAL: [■■□□□□] 18%</span>
-          <span className="text-gray-600">//</span>
-          <span className="text-red-400 font-bold">CARRIER_LOST</span>
-        </div>
-
-        {/* Right: Strike Counter & Status */}
-        <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-2xl border border-red-500/45 shadow-[0_0_24px_-6px_rgba(239,68,68,0.45)]">
-          <div>
-            <div className="text-gray-500 text-[10px] tracking-[0.18em] uppercase text-right">INFRACTIONS</div>
-            <div className="text-red-400 font-bold tracking-wider text-right">
-              {strikeCount} {strikeCount === 1 ? 'STRIKE' : 'STRIKES'} RECORDED
-            </div>
-          </div>
-          <div className="px-2.5 py-1 rounded-full bg-red-950/80 border border-red-500/60 text-red-300 font-bold text-[10px] tracking-[0.16em] uppercase">
-            STATUS: LOCKED
-          </div>
-        </div>
-      </header>
-
-      {/* --- MAIN CENTERPIECE: DOOM SILHOUETTE, GLITCH TITLE, QUOTE, & 3 BOXES --- */}
-      <main className="relative z-10 my-auto py-6 flex flex-col items-center text-center max-w-2xl mx-auto w-full">
-        {/* Doom judges you (3D); a red-eyed still image of him shows while it loads or if 3D is unavailable */}
-        <div className="mb-2 relative">
-          <Doom3D
-            mode="judge"
-            className="doom-stage is-red relative w-48 h-56 sm:w-60 sm:h-72"
-          />
-        </div>
-
-        {/* Headline: SIGNAL SEVERED BY DOOM (Layered Multi-Track Glitch Title) */}
-        <div className="relative inline-block mb-3 select-none">
-          {/* Red Aberration Ghost */}
-          <span
-            className="absolute inset-0 font-regal text-3xl sm:text-5xl lg:text-6xl font-black tracking-wider text-red-500 doom-rgb-ghost-red pointer-events-none"
-            aria-hidden="true"
-          >
-            SIGNAL SEVERED BY DOOM
-          </span>
-          {/* Cyan Aberration Ghost */}
-          <span
-            className="absolute inset-0 font-regal text-3xl sm:text-5xl lg:text-6xl font-black tracking-wider text-cyan-400 doom-rgb-ghost-cyan pointer-events-none"
-            aria-hidden="true"
-          >
-            SIGNAL SEVERED BY DOOM
-          </span>
-          {/* Foreground Emerald Headline */}
-          <h1 className="doom-rgb-glitch font-regal text-3xl sm:text-5xl lg:text-6xl font-black tracking-wider text-emerald-100 drop-shadow-[0_0_25px_rgba(57,255,136,0.85)] relative z-10 uppercase">
-            SIGNAL SEVERED BY DOOM
-          </h1>
-        </div>
-
-        {/* Rotating Monospace Subtext with Typewriter Effect */}
-        <div className="h-12 flex items-center justify-center px-4 mb-6">
-          <p className="font-mono text-xs sm:text-sm text-emerald-300 tracking-wide font-medium">
-            &ldquo;{displayedText}&rdquo;
-            <span className="inline-block w-2 h-4 bg-[#39ff88] ml-1 translate-y-0.5 animate-pulse" />
-          </p>
-        </div>
-
-        {/* =========================================================
-            THE 3 COMPONENT BOXES (ALL WITHIN THE GLITCH SCREEN)
-           ========================================================= */}
-        <div className="w-full space-y-3.5">
-          {/* BOX 1: PENALTY PROTOCOL ENFORCED (Static Instruction Block) */}
-          <div className="w-full bg-[#120707]/85 border border-red-500/60 rounded-2xl p-5 sm:p-6 shadow-[0_0_50px_-12px_rgba(239,68,68,0.5)] text-left">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-red-500/25 pb-3 mb-4">
-              <div className="flex items-center gap-2 text-red-400 font-bold font-mono text-xs uppercase tracking-[0.18em]">
-                <AlertOctagon size={16} /> PENALTY PROTOCOL ENFORCED
+      {/* The content scrolls in here, so the layers above stay pinned to the whole screen */}
+      <div className="relative z-10 h-full overflow-y-auto flex flex-col justify-between p-4 sm:p-6">
+        {/* --- TOP BAR / HUD CORNER PANEL & TELEMETRY --- */}
+        <header className="relative z-10 w-full max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3 font-mono text-xs pb-4 border-b border-[#1f6f43]/40">
+          {/* Left: Operative ID */}
+          <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-2xl border border-[#1f6f43]/60">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+            <div>
+              <div className="text-gray-500 text-[10px] tracking-[0.18em] uppercase">DISCIPLINED OPERATIVE</div>
+              <div className="text-emerald-100 font-bold tracking-wide">
+                {playerName || 'UNKNOWN'} <span className="text-gray-500 text-[10px] font-normal">[RRN: {rrn || 'N/A'}]</span>
               </div>
-              <span className="font-mono text-[10px] px-2.5 py-1 rounded-full bg-red-950/80 border border-red-500/50 text-red-300 font-bold tracking-wider">
-                ATTEMPTS USED: {strikeCount} / 15 MAX
-              </span>
             </div>
-            <p className="text-gray-100 text-sm sm:text-[15px] leading-relaxed mb-4">
-              REPORT TO: <span className="text-[#39ff88] font-bold">[PENALTY STATION / VOLUNTEER NAME]</span>. Complete your penance. Await Doom&apos;s pardon.
+          </div>
+
+          {/* Center: Live Telemetry */}
+          <div className="hidden md:flex items-center gap-3 text-[11px] text-emerald-400/80 bg-black/50 px-4 py-2 rounded-full border border-gray-800">
+            <span>FREQ: 88.4 MHz</span>
+            <span className="text-gray-600">//</span>
+            <span>SIGNAL: [■■□□□□] 18%</span>
+            <span className="text-gray-600">//</span>
+            <span className="text-red-400 font-bold">CARRIER_LOST</span>
+          </div>
+
+          {/* Right: Strike Counter & Status */}
+          <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-2xl border border-red-500/45 shadow-[0_0_24px_-6px_rgba(239,68,68,0.45)]">
+            <div>
+              <div className="text-gray-500 text-[10px] tracking-[0.18em] uppercase text-right">INFRACTIONS</div>
+              <div className="text-red-400 font-bold tracking-wider text-right">
+                {strikeCount} {strikeCount === 1 ? 'STRIKE' : 'STRIKES'} RECORDED
+              </div>
+            </div>
+            <div className="px-2.5 py-1 rounded-full bg-red-950/80 border border-red-500/60 text-red-300 font-bold text-[10px] tracking-[0.16em] uppercase">
+              STATUS: LOCKED
+            </div>
+          </div>
+        </header>
+
+        {/* --- MAIN CENTERPIECE: DOOM SILHOUETTE, GLITCH TITLE, QUOTE, & 3 BOXES --- */}
+        <main className="relative z-10 my-auto py-6 flex flex-col items-center text-center max-w-2xl mx-auto w-full">
+          {/* Doom judges you (3D); a red-eyed still image of him shows while it loads or if 3D is unavailable */}
+          <div className="mb-2 relative">
+            <Doom3D
+              mode="judge"
+              className="doom-stage is-red relative w-48 h-56 sm:w-60 sm:h-72"
+            />
+          </div>
+
+          {/* Headline: SIGNAL SEVERED BY DOOM (Layered Multi-Track Glitch Title) */}
+          <div className="relative inline-block mb-3 select-none">
+            {/* Red Aberration Ghost */}
+            <span
+              className="absolute inset-0 font-regal text-3xl sm:text-5xl lg:text-6xl font-black tracking-wider text-red-500 doom-rgb-ghost-red pointer-events-none"
+              aria-hidden="true"
+            >
+              SIGNAL SEVERED BY DOOM
+            </span>
+            {/* Cyan Aberration Ghost */}
+            <span
+              className="absolute inset-0 font-regal text-3xl sm:text-5xl lg:text-6xl font-black tracking-wider text-cyan-400 doom-rgb-ghost-cyan pointer-events-none"
+              aria-hidden="true"
+            >
+              SIGNAL SEVERED BY DOOM
+            </span>
+            {/* Foreground Emerald Headline */}
+            <h1 className="doom-rgb-glitch font-regal text-3xl sm:text-5xl lg:text-6xl font-black tracking-wider text-emerald-100 drop-shadow-[0_0_25px_rgba(57,255,136,0.85)] relative z-10 uppercase">
+              SIGNAL SEVERED BY DOOM
+            </h1>
+          </div>
+
+          {/* Rotating Monospace Subtext with Typewriter Effect */}
+          <div className="h-12 flex items-center justify-center px-4 mb-6">
+            <p className="font-mono text-xs sm:text-sm text-emerald-300 tracking-wide font-medium">
+              &ldquo;{displayedText}&rdquo;
+              <span className="inline-block w-2 h-4 bg-[#39ff88] ml-1 translate-y-0.5 animate-pulse" />
             </p>
-            <div className="text-[12px] text-gray-300 bg-black/50 px-3.5 py-3 rounded-xl border border-gray-800 flex items-center gap-2.5">
-              <Lock size={14} className="text-red-400 shrink-0" />
-              <span>
-                {currentClueNumber < 15
-                  ? `One guess per clue permitted. When an admin unlocks your terminal, you will automatically be sent to Clue #${currentClueNumber + 1}.`
-                  : 'Final attempt (15/15) reached. Admin authorization will conclude your trial.'}
-              </span>
-            </div>
           </div>
 
-          {/* BOX 2: ACTIVE TRANSMISSION / NEXT CLUE REDACTED STATUS */}
-          <div className="w-full bg-black/50 border border-[#1f6f43]/50 rounded-2xl p-4 sm:p-5 font-mono text-left">
-            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-400 mb-3">
-              <span>
-                TRANSMISSION LOCKED AT CLUE #{currentClueNumber}
-                {currentClueNumber < 15 && (
-                  <span className="text-[#39ff88] font-semibold ml-2">
-                    &bull; NEXT: CLUE #{currentClueNumber + 1} UPON UNLOCK
-                  </span>
-                )}
-              </span>
-              <span className="text-red-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                <Lock size={11} /> LOCKED
-              </span>
-            </div>
-            {/* Redacted Bar with "ENCRYPTED BY DOOM" */}
-            <div className="relative py-3 px-4 bg-black/85 rounded-xl border border-red-950/80 flex items-center justify-center overflow-hidden">
-              <div className="absolute inset-0 bg-red-950/25 doom-scanline-tear pointer-events-none" />
-              <span className="font-regal text-xs sm:text-sm font-bold tracking-[0.2em] text-red-400 flex items-center gap-2">
-                <span className="text-gray-700 select-none">██████</span>
-                <span>ENCRYPTED BY DOOM</span>
-                <span className="text-gray-700 select-none">██████</span>
-              </span>
-            </div>
-          </div>
-
-          {/* BOX 3: INSPECT DECRYPTED ARCHIVES (Read-Only Previous Clues) */}
-          {unlockedClues.length > 0 && (
-            <div className="w-full text-left font-mono text-xs">
-              <button
-                type="button"
-                onClick={() => setShowArchives(!showArchives)}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-black/50 border border-[#1f6f43]/50 text-emerald-300 hover:text-emerald-100 hover:border-[#39ff88]/50 transition-colors cursor-pointer"
-              >
-                <span className="flex items-center gap-2">
-                  <FileText size={13} />
-                  <span>INSPECT DECRYPTED ARCHIVES ({unlockedClues.length} CLUES VIEWABLE)</span>
-                </span>
-                {showArchives ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-
-              {showArchives && (
-                <div className="mt-2 max-h-56 overflow-y-auto space-y-2 p-3 bg-black/80 rounded-2xl border border-gray-800 text-[12px]">
-                  {unlockedClues.map((c) => (
-                    <div key={c.clue_number} className="px-3.5 py-3 rounded-xl bg-white/[0.03] border border-gray-800/80">
-                      <div className="text-red-400 font-bold mb-1.5 flex items-center justify-between">
-                        <span>CLUE #{c.clue_number}</span>
-                        <span className="text-[10px] text-gray-500 font-normal">DECRYPTED INTEL</span>
-                      </div>
-                      <p className="text-gray-200 font-sans text-[13px] italic">&ldquo;{c.clue_text}&rdquo;</p>
-                    </div>
-                  ))}
+          {/* =========================================================
+              THE 3 COMPONENT BOXES (ALL WITHIN THE GLITCH SCREEN)
+             ========================================================= */}
+          <div className="w-full space-y-3.5">
+            {/* BOX 1: PENALTY PROTOCOL ENFORCED (Static Instruction Block) */}
+            <div className="w-full bg-[#120707]/85 border border-red-500/60 rounded-2xl p-5 sm:p-6 shadow-[0_0_50px_-12px_rgba(239,68,68,0.5)] text-left">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-red-500/25 pb-3 mb-4">
+                <div className="flex items-center gap-2 text-red-400 font-bold font-mono text-xs uppercase tracking-[0.18em]">
+                  <AlertOctagon size={16} /> PENALTY PROTOCOL ENFORCED
                 </div>
-              )}
+                <span className="font-mono text-[10px] px-2.5 py-1 rounded-full bg-red-950/80 border border-red-500/50 text-red-300 font-bold tracking-wider">
+                  ATTEMPTS USED: {strikeCount} / 15 MAX
+                </span>
+              </div>
+              <p className="text-gray-100 text-sm sm:text-[15px] leading-relaxed mb-4">
+                REPORT TO: <span className="text-[#39ff88] font-bold">[PENALTY STATION / VOLUNTEER NAME]</span>. Complete your penance. Await Doom&apos;s pardon.
+              </p>
+              <div className="text-[12px] text-gray-300 bg-black/50 px-3.5 py-3 rounded-xl border border-gray-800 flex items-center gap-2.5">
+                <Lock size={14} className="text-red-400 shrink-0" />
+                <span>
+                  {currentClueNumber < 15
+                    ? `One guess per clue permitted. When an admin unlocks your terminal, you will automatically be sent to Clue #${currentClueNumber + 1}.`
+                    : 'Final attempt (15/15) reached. Admin authorization will conclude your trial.'}
+                </span>
+              </div>
             </div>
-          )}
-        </div>
-      </main>
 
-      {/* --- FOOTER STATUS BAR --- */}
-      <footer className="relative z-10 w-full max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-[#1f6f43]/40 text-[11px] font-mono text-gray-500">
-        <div className="flex items-center gap-2">
-          <Terminal size={12} className="text-[#39ff88]" />
-          <span>LATVERIAN SECURE FREQUENCY 88.4 MHz</span>
-        </div>
-        <div className="flex items-center gap-2 text-emerald-500/80">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span>LISTENING FOR IMPERIAL PARDON...</span>
-        </div>
-      </footer>
+            {/* BOX 2: ACTIVE TRANSMISSION / NEXT CLUE REDACTED STATUS */}
+            <div className="w-full bg-black/50 border border-[#1f6f43]/50 rounded-2xl p-4 sm:p-5 font-mono text-left">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-gray-400 mb-3">
+                <span>
+                  TRANSMISSION LOCKED AT CLUE #{currentClueNumber}
+                  {currentClueNumber < 15 && (
+                    <span className="text-[#39ff88] font-semibold ml-2">
+                      &bull; NEXT: CLUE #{currentClueNumber + 1} UPON UNLOCK
+                    </span>
+                  )}
+                </span>
+                <span className="text-red-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                  <Lock size={11} /> LOCKED
+                </span>
+              </div>
+              {/* Redacted Bar with "ENCRYPTED BY DOOM" */}
+              <div className="relative py-3 px-4 bg-black/85 rounded-xl border border-red-950/80 flex items-center justify-center overflow-hidden">
+                <div className="absolute inset-0 bg-red-950/25 doom-scanline-tear pointer-events-none" />
+                <span className="font-regal text-xs sm:text-sm font-bold tracking-[0.2em] text-red-400 flex items-center gap-2">
+                  <span className="text-gray-700 select-none">██████</span>
+                  <span>ENCRYPTED BY DOOM</span>
+                  <span className="text-gray-700 select-none">██████</span>
+                </span>
+              </div>
+            </div>
+
+            {/* BOX 3: INSPECT DECRYPTED ARCHIVES (Read-Only Previous Clues) */}
+            {unlockedClues.length > 0 && (
+              <div className="w-full text-left font-mono text-xs">
+                <button
+                  type="button"
+                  onClick={() => setShowArchives(!showArchives)}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-black/50 border border-[#1f6f43]/50 text-emerald-300 hover:text-emerald-100 hover:border-[#39ff88]/50 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <FileText size={13} />
+                    <span>INSPECT DECRYPTED ARCHIVES ({unlockedClues.length} CLUES VIEWABLE)</span>
+                  </span>
+                  {showArchives ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+
+                {showArchives && (
+                  <div className="mt-2 max-h-56 overflow-y-auto space-y-2 p-3 bg-black/80 rounded-2xl border border-gray-800 text-[12px]">
+                    {unlockedClues.map((c) => (
+                      <div key={c.clue_number} className="px-3.5 py-3 rounded-xl bg-white/[0.03] border border-gray-800/80">
+                        <div className="text-red-400 font-bold mb-1.5 flex items-center justify-between">
+                          <span>CLUE #{c.clue_number}</span>
+                          <span className="text-[10px] text-gray-500 font-normal">DECRYPTED INTEL</span>
+                        </div>
+                        <p className="text-gray-200 font-sans text-[13px] italic">&ldquo;{c.clue_text}&rdquo;</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </main>
+
+        {/* --- FOOTER STATUS BAR --- */}
+        <footer className="relative z-10 w-full max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-[#1f6f43]/40 text-[11px] font-mono text-gray-500">
+          <div className="flex items-center gap-2">
+            <Terminal size={12} className="text-[#39ff88]" />
+            <span>LATVERIAN SECURE FREQUENCY 88.4 MHz</span>
+          </div>
+          <div className="flex items-center gap-2 text-emerald-500/80">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>LISTENING FOR IMPERIAL PARDON...</span>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }

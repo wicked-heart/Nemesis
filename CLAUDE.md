@@ -414,6 +414,11 @@ src/hooks src/App.tsx`) and reproduce it with the friend's original side by side
   page, `<BackdropSlot />` inside the lock screen as a red "corrupted signal"). Building them per page froze
   the Landing → Entry change for ~0.5 s (frames of 180/97/188 ms); now the slowest frame is ~14 ms. Never
   give a page its own WebGL canvas again.
+- **Lock screen layout:** its root has a transform/filter animation (`doom-screen-jitter`), so its `fixed`
+  children are positioned against the root, not the window. The root must not scroll: the content scrolls in
+  the inner `overflow-y-auto` box, so the background layers stay full-screen.
+- **No copy / paste for players:** `NoCopy.tsx` is mounted on every player screen (not admin) so clues can't
+  be copied into a chatbot or answers pasted in. Add `<NoCopy />` to any new player screen.
 - **Load test (2026-10-12, real database, owner-approved):** 60 fake players (LOADTEST01..60) registered,
   began, revealed a clue, guessed wrong (all 60 locked) and polled like real screens for 2 minutes: 4,429
   requests at 36/s, **0 errors**, median 45 ms, p95 under 90 ms, slowest 382 ms. Note: `get_game_state` does

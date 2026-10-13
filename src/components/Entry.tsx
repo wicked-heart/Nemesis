@@ -3,6 +3,7 @@ import { User, Fingerprint, Loader2, ArrowLeft, ShieldCheck, Sparkles } from 'lu
 import { registerOrResumeParticipant } from '@/lib/api';
 import DoomFace from './DoomFace';
 import Backdrop from './backdrop/Backdrop';
+import NoCopy from './NoCopy';
 import Doom3D from './doom3d/Doom3D';
 import { sounds } from '@/lib/sound';
 
@@ -49,6 +50,7 @@ export default function Entry({ onStarted, onBack }: EntryProps) {
   return (
     <div className="min-h-screen cyber-grid scanlines flex flex-col px-4 sm:px-6 py-8 sm:py-12 relative animate-fade-in">
       <Backdrop />
+      <NoCopy />
 
       <div className="relative z-10 flex-1 w-full max-w-6xl mx-auto grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
         {/* Left: registration form */}

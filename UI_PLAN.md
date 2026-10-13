@@ -160,6 +160,26 @@ Doubts in section 9 were answered "go with the defaults".
   - **Load test:** 60 players at once on the real database, 0 errors (details in CLAUDE.md).
   - **Production build** served locally like Vercel: every file loads, no console errors, 145 fps.
   - **Admin password:** plain text removed from the SQL files (still bcrypt in the database).
+- **V9: lock-screen background fills the screen, no copy/paste for players (done, 2026-10-13).**
+  - **Lock screen background:** the red dots only covered the top. Two causes: (1) the corrupted signal
+    used the stage's "fade out in the middle" (centred low), so the lower middle was black; it now fills the
+    whole screen. (2) The screen's shake animation (`doom-screen-jitter`) makes its `fixed` layers scroll
+    with the content, so on a short laptop screen the bottom had no background after scrolling. The content
+    now scrolls in its own inner box and the background layers stay pinned to the screen.
+  - **No copy / paste on player screens** (`NoCopy.tsx`, mounted on Landing, Entry, the game screen and
+    results; not on the admin screens): blocks copy, cut, paste (keys, right-click, phone long-press and
+    keyboard clipboard bar), dragging text, text selection, Ctrl+A/S/P, and printing shows a blank page.
+    Typing in the guess box still works. It cannot stop screenshots or phone photos.
+  - **Wheel of Doom (admin) restyled as Doom's armour** (`WheelOfDoom.tsx`, drawing only): plates alternate
+    green cloak (knitted cloth, stitched hem) and brushed iron (engraved panel, rivets); a forged iron rim with
+    engraved notches and rivets; copper studs like his cloak clasps; Doom's face in the hub with "DOOM" /
+    "VERDICT" engraved round it; a steel pointer with a copper collar and an eye jewel. While spinning and on
+    the verdict his eyes, the jewel and the glow turn red; the chosen plate is outlined in red and the others
+    dim; the verdict name lands like a stamp. The friend's penalty list, sounds, spin maths and result code
+    are byte-identical. Fairness checked: 18 million simulated spins with the same maths land on each penalty
+    16.67% of the time. The studs sit at plate centres so the pointer flicks exactly when the tick sounds (the
+    tick fires as each plate centre passes). Each frame copies pre-drawn layers pixel for pixel; the plates
+    are drawn directly at rest so the names stay sharp.
 
 ---
 
