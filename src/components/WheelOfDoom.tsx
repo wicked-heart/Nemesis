@@ -78,7 +78,7 @@ const STEP = TAU / SEGMENTS_COUNT;
 const PLATE_R = 250; // outer edge of the plates
 const TRACK_R = 276; // the studs run in a sunken track between the plates and the rim
 const RIM_R = 298;
-const STUD_R = 263; // one copper stud per plate: it flicks the pointer in time with the tick sound
+const STUD_R = 263; // one copper stud per plate: flicks the pointer as the wheel rotates
 const HUB_R = 84; // Doom's face and its ring (HTML over the canvas)
 const LABEL_IN = HUB_R + 20;
 const LABEL_OUT = PLATE_R - 16;
@@ -493,69 +493,6 @@ function drawPointer(ctx: CanvasRenderingContext2D, deflection: number, judging:
 export default function WheelOfDoom() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  // Audio synthesis via Web Audio API for mechanical peg ticks
-  const audioCtxRef = useRef<AudioContext | null>(null);
-
-  const getAudioContext = useCallback(() => {
-    if (!audioCtxRef.current) {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioCtx) {
-        audioCtxRef.current = new AudioCtx();
-      }
-    }
-    if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-      audioCtxRef.current.resume();
-    }
-    return audioCtxRef.current;
-  }, []);
-
-  const playTickSound = useCallback(() => {
-    try {
-      const ctx = getAudioContext();
-      if (!ctx) return;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(850, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.025);
-
-      gain.gain.setValueAtTime(0.16, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.025);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start();
-      osc.stop(ctx.currentTime + 0.03);
-    } catch {
-      // Audio context might be restricted before gesture; safe to ignore
-    }
-  }, [getAudioContext]);
-
-  const playVictorySound = useCallback(() => {
-    try {
-      const ctx = getAudioContext();
-      if (!ctx) return;
-      const notes = [392, 523.25, 659.25, 783.99]; // Regal Latverian triad
-      notes.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        const startTime = ctx.currentTime + idx * 0.09;
-        gain.gain.setValueAtTime(0.18, startTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.38);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(startTime);
-        osc.stop(startTime + 0.42);
-      });
-    } catch {
-      // ignore
-    }
-  }, [getAudioContext]);
-
   // Wheel State
   const [isSpinning, setIsSpinning] = useState(false);
   const [currentRotation, setCurrentRotation] = useState(0); // in radians
@@ -706,8 +643,6 @@ export default function WheelOfDoom() {
     setIsSpinning(true);
     setLastVerdict(null);
 
-    getAudioContext();
-
     // Physics parameters: strictly <= 3.5s (3.2s)
     const SPIN_DURATION_MS = 3200;
     const startRot = currentRotationRef.current;
@@ -737,7 +672,6 @@ export default function WheelOfDoom() {
       if (currentPeg !== lastPegIndex.current) {
         lastPegIndex.current = currentPeg;
         flapperDeflection.current = -0.22;
-        playTickSound();
       }
 
       flapperDeflection.current *= 0.82;
@@ -754,12 +688,11 @@ export default function WheelOfDoom() {
 
         const finalPenalty = getSegmentAtAngle(targetEndRot);
         setLastVerdict(finalPenalty);
-        playVictorySound();
       }
     };
 
     animationFrameRef.current = requestAnimationFrame(animate);
-  }, [isSpinning, getAudioContext, playTickSound, playVictorySound, getSegmentAtAngle]);
+  }, [isSpinning, getSegmentAtAngle]);
 
   useEffect(() => {
     return () => {
