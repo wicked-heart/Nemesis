@@ -53,9 +53,9 @@ export const WHEEL_PENALTIES: WheelPenalty[] = [
     pipColor: '#22c55e',
   },
   {
-    id: 'green_chilli',
-    name: 'Green Chilli',
-    label: 'GREEN CHILLI',
+    id: 'mimic_marvel_character',
+    name: 'Mimic a Marvel Character',
+    label: 'MIMIC A MARVEL CHARACTER',
     color: '#151d18', // Plated Iron
     colorDark: '#0c120e',
     pipColor: '#8a9a90',
